@@ -26,15 +26,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
       - name: Setup RPM build environment
         run: |
           rpmdev-setuptree
           cp ./*.spec ~/rpmbuild/SPECS/
           cp -r ./* ~/rpmbuild/SOURCES/ || true
 
+      - name: Create source tarball
+        run: |
+          mkdir -p ~/rpmbuild/SOURCES/openchami-${{ env.VERSION }}
+          cp -r ./* ~/rpmbuild/SOURCES/openchami-${{ env.VERSION }}/
+          tar -czf ~/rpmbuild/SOURCES/openchami-${{ env.VERSION }}.tar.gz -C ~/rpmbuild/SOURCES openchami-${{ env.VERSION }}
+  
+  
+      - name: Sign source tarball
+        run: |
+          gpg --batch --yes --armor --detach-sign --output ~/rpmbuild/SOURCES/openchami-${{ env.VERSION }}.tar.gz.asc ~/rpmbuild/SOURCES/openchami-${{ env.VERSION }}.tar.gz
+  
+
       - name: Build RPM package
         run: |
-          rpmbuild -ba ~/rpmbuild/SPECS/*.spec
+          rpmbuild -ba ~/rpmbuild/SPECS/*.spec --define "version ${VERSION}" --define "release 1"
 
       - name: Import GPG key
         run: |

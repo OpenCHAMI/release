@@ -1,6 +1,6 @@
 Name:           openchami
-Version:        0.9.0
-Release:        1%{?dist}
+Version:        %{version}
+Release:        %{release}%{?dist}
 Summary:        OpenCHAMI RPM package
 
 License:        MIT
