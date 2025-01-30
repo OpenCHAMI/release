@@ -52,7 +52,7 @@ jobs:
         run: |
           mkdir -p ~/rpmbuild/SOURCES/openchami-${{ env.VERSION }}-${{ env.COMMIT_SHA }}
           cp -r ./* ~/rpmbuild/SOURCES/openchami-${{ env.VERSION }}-${{ env.COMMIT_SHA }}/
-          tar -czf ~/rpmbuild/SOURCES/openchami-${{ env.VERSION }}-${{ env.COMMIT_SHA }}.tar.gz -C ~/rpmbuild/SOURCES openchami-${{ env.VERSION }}-${{ env.COMMIT_SHA }}
+          tar -czf ~/rpmbuild/SOURCES/openchami.tar.gz -C ~/rpmbuild/SOURCES openchami-${{ env.VERSION }}-${{ env.COMMIT_SHA }}
 
       - name: Sign source tarball
         if: env.VERSION != '0.0.0'

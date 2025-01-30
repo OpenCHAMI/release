@@ -5,7 +5,7 @@ Summary:        OpenCHAMI RPM package
 
 License:        MIT
 URL:            https://openchami.org
-Source0:        %{name}-%{version}.tar.gz
+Source0:        %{name}.tar.gz
 
 BuildArch:      noarch
 
