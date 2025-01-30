@@ -10,6 +10,8 @@ on:
 
 permissions:
   contents: read
+  secrets: read
+  actions: write
 
 jobs:
   build-rpm:
@@ -83,7 +85,7 @@ jobs:
           done
 
       - name: Upload RPM as artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: built-rpm
           path: ~/rpmbuild/RPMS/**/*.rpm
