@@ -10,8 +10,6 @@ on:
 
 permissions:
   contents: read
-  secrets: read
-  actions: write
 
 jobs:
   build-rpm:
