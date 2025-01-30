@@ -26,6 +26,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+
+      - name: Import GPG key
+        run: |
+          echo "$GPG_PRIVATE_KEY" | base64 --decode | gpg --import --batch --yes
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+
       - name: Get version from tag
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
@@ -44,19 +51,17 @@ jobs:
   
   
       - name: Sign source tarball
+        if: env.VERSION != '0.0.0'
         run: |
-          gpg --batch --yes --armor --detach-sign --output ~/rpmbuild/SOURCES/openchami-${{ env.VERSION }}.tar.gz.asc ~/rpmbuild/SOURCES/openchami-${{ env.VERSION }}.tar.gz
+          echo "$GPG_PASSPHRASE" | gpg --batch --yes --passphrase-fd 0 --pinentry-mode loopback --armor --detach-sign --output ~/rpmbuild/SOURCES/openchami-${{ env.VERSION }}-${{ env.COMMIT_SHA }}.tar.gz.asc ~/rpmbuild/SOURCES/openchami-${{ env.VERSION }}-${{ env.COMMIT_SHA }}.tar.gz
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
   
 
       - name: Build RPM package
         run: |
           rpmbuild -ba ~/rpmbuild/SPECS/*.spec --define "version ${VERSION}" --define "release 1"
 
-      - name: Import GPG key
-        run: |
-          echo "$GPG_PRIVATE_KEY" | base64 --decode | gpg --import --batch --yes
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
 
       - name: Sign RPM packages
         run: |
