@@ -63,7 +63,11 @@ jobs:
 
       - name: Build RPM package
         run: |
-          rpmbuild -ba ~/rpmbuild/SPECS/*.spec --define "version ${{ env.VERSION }}-${{ env.COMMIT_SHA }}" --define "release 1"
+          if [ "${{ env.VERSION }}" = "0.0.0" ]; then
+            rpmbuild -ba ~/rpmbuild/SPECS/*.spec --define "version ${{ env.VERSION }}" --define "release 1"
+          else
+            rpmbuild -ba ~/rpmbuild/SPECS/*.spec --define "version ${{ env.VERSION }}-${{ env.COMMIT_SHA }}" --define "release 1"
+          fi
 
       - name: Sign RPM packages
         if: env.VERSION != '0.0.0'
