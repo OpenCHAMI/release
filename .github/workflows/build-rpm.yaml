@@ -89,5 +89,5 @@ jobs:
       - name: Upload RPM as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: built-rpm
+          name: openchami-${{ env.VERSION }}-${{ env.COMMIT_SHA }}
           path: ~/rpmbuild/RPMS/**/*.rpm
