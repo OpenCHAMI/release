@@ -1,5 +1,6 @@
 [Unit]
 Description=The step-ca container
+PartOf=openchami.target
 
 [Container]
 ContainerName=step-ca

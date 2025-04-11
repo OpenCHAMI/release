@@ -2,6 +2,7 @@
 Description=The cloud-init-server container
 Requires=smd.service opaal.service
 After=smd.service opaal.service
+PartOf=openchami.target
 
 [Container]
 ContainerName=cloud-init-server

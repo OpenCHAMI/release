@@ -1,5 +1,6 @@
 [Unit]
 Description=The postgres container
+PartOf=openchami.target
 
 [Container]
 ContainerName=postgres

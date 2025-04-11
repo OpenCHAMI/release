@@ -2,6 +2,7 @@
 Description=The hydra container
 Requires=hydra-migrate.service
 After=hydra-migrate.service
+PartOf=openchami.target
 
 [Container]
 ContainerName=hydra

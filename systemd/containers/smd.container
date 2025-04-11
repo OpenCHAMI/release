@@ -2,6 +2,7 @@
 Description=The smd container
 Requires=smd-init.service opaal.service
 After=smd-init.service opaal.service
+PartOf=openchami.target
 
 [Container]
 ContainerName=smd

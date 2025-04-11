@@ -2,6 +2,7 @@
 Description=The coresmd container
 Requires=haproxy.service
 After=haproxy.service
+PartOf=openchami.target
 
 [Container]
 ContainerName=coresmd

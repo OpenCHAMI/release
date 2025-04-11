@@ -2,6 +2,7 @@
 Description=The opaal container
 Requires=opaal-idp.service
 After=opaal-idp.service
+PartOf=openchami.target
 
 [Container]
 ContainerName=opaal

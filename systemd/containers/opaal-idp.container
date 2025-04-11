@@ -2,6 +2,7 @@
 Description=The opaal-idp container
 Requires=hydra-gen-jwks.service
 After=hydra-gen-jwks.service
+PartOf=openchami.target
 
 [Container]
 ContainerName=opaal-idp

@@ -2,6 +2,7 @@
 Description=The bss container
 Requires=bss-init.service opaal.service
 After=bss-init.service opaal.service
+PartOf=openchami.target
 
 [Container]
 ContainerName=bss
