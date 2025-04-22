@@ -8,7 +8,7 @@ PartOf=openchami.target
 ContainerName=coresmd
 
 HostName=coresmd
-Image=ghcr.io/openchami/coredhcp:v0.2.0
+Image=ghcr.io/openchami/coredhcp:v0.3.0
 
 #Capabilities
 AddCapability=NET_ADMIN
