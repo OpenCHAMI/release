@@ -6,7 +6,7 @@ After=smd.service
 [Container]
 ContainerName=bss-init
 HostName=bss-init
-Image=ghcr.io/openchami/bss:v1.31.3
+Image=ghcr.io/openchami/bss:v1.32.0
 
 # Environment Variables
 EnvironmentFile=/etc/openchami/configs/openchami.env

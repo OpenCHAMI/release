@@ -7,7 +7,7 @@ PartOf=openchami.target
 [Container]
 ContainerName=bss
 HostName=bss
-Image=ghcr.io/openchami/bss:v1.31.3
+Image=ghcr.io/openchami/bss:v1.32.0
 
 # Environment Variables
 EnvironmentFile=/etc/openchami/configs/openchami.env
