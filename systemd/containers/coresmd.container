@@ -12,6 +12,7 @@ Image=ghcr.io/openchami/coredhcp:v0.3.0
 
 #Capabilities
 AddCapability=NET_ADMIN
+AddCapability=NET_RAW
 
 # Volumes
 Volume=step-root-ca.volume:/root_ca/:ro,Z
