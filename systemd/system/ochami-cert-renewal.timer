@@ -1,0 +1,9 @@
+[Unit]
+Description=Renew OpenCHAMI certificates daily
+
+[Timer]
+OnUnitActiveSec=1d
+Persistent=true
+
+[Install]
+WantedBy=timers.target

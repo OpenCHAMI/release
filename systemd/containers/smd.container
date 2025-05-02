@@ -7,7 +7,7 @@ PartOf=openchami.target
 [Container]
 ContainerName=smd
 HostName=smd
-Image=ghcr.io/openchami/smd:v2.17.7
+Image=ghcr.io/openchami/smd:v2.18
 
 # Environment Variables
 EnvironmentFile=/etc/openchami/configs/openchami.env
