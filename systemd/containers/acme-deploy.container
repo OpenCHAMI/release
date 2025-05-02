@@ -9,7 +9,7 @@ HostName=acme-deploy
 Image=ghcr.io/openchami/acme.sh:v0.2.2
 
 # Volumes
-Volume=/:/root_ca/:ro
+Volume=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem:/etc/ssl/certs/ca-bundle.crt:ro,Z
 Volume=acme-certs:/root/.acme.sh
 Volume=haproxy-certs:/root/certs/
 
@@ -21,7 +21,7 @@ Network=openchami-cert-internal.network
 
 # Proxy settings
 PodmanArgs=--http-proxy=false
-PodmanArgs=--entrypoint='["/bin/sh","-c","/usr/bin/acme.sh --server https://step-ca:9000/acme/acme/directory --ca-bundle /root_ca/root_ca.crt --deploy --deploy-hook haproxy --domain demo.openchami.cluster "]'
+PodmanArgs=--entrypoint='["/bin/sh","-c","/usr/bin/acme.sh --server https://step-ca:9000/acme/acme/directory --deploy --deploy-hook haproxy --domain demo.openchami.cluster "]'
 
 [Service]
 Restart=on-failure
