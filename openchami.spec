@@ -48,6 +48,8 @@ chmod 600 %{buildroot}/etc/openchami/configs/openchami.env
 /etc/openchami/configs/*
 /etc/containers/systemd/*
 /etc/systemd/system/openchami.target
+/etc/systemd/system/openchami-cert-renewal.service
+/etc/systemd/system/openchami-cert-renewal.timer
 /usr/local/bin/bootstrap_openchami.sh
 /etc/profile.d/openchami.sh
 /etc/openchami/pg-init/multi-psql-db.sh
