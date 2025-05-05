@@ -12,6 +12,7 @@ Image=ghcr.io/openchami/coredhcp:v0.3.0
 
 #Capabilities
 AddCapability=NET_ADMIN
+AddCapability=NET_RAW
 
 # Volumes
 Volume=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem:/etc/ssl/certs/ca-bundle.crt:ro,Z

@@ -8,3 +8,4 @@ server4:
     - netmask: 255.255.255.0
     - coresmd: https://demo.openchami.cluster:8443 http://172.16.0.254:8081 /root_ca/root_ca.crt 30s 1h false
     - bootloop: /tmp/coredhcp.db default 5m 172.16.0.200 172.16.0.250
+
