@@ -6,10 +6,10 @@ After=step-ca.service
 [Container]
 ContainerName=demo.openchami.cluster
 HostName=demo.openchami.cluster
-Image=ghcr.io/openchami/acme.sh:v0.2.2
+Image=ghcr.io/openchami/acme.sh:v0.2.3
 
 # Volumes
-Volume=step-root-ca.volume:/root_ca/:ro
+Volume=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem:/root_ca/root_ca.crt:ro,z
 Volume=acme-certs.volume:/root/.acme.sh
 
 
@@ -19,9 +19,8 @@ EnvironmentFile=/etc/openchami/configs/openchami.env
 # Networks for the Container to use
 Network=openchami-cert-internal.network
 
-# Proxy settings
-PodmanArgs=--http-proxy=false
-PodmanArgs=--entrypoint='["/bin/sh","-c","/usr/bin/acme.sh --server https://step-ca:9000/acme/acme/directory --ca-bundle /root_ca/root_ca.crt -d demo.openchami.cluster --issue --standalone --force "]'
+# Entrypoint settings
+PodmanArgs=--http-proxy=false --entrypoint='["/bin/sh","-c","/usr/bin/acme.sh --server https://step-ca:9000/acme/acme/directory -d demo.openchami.cluster --issue --standalone --force "]'
 
 [Service]
 Restart=on-failure

@@ -9,7 +9,6 @@ ContainerName=smd
 HostName=smd
 Image=ghcr.io/openchami/smd:v2.18.0
 
-
 # Environment Variables
 EnvironmentFile=/etc/openchami/configs/openchami.env
 

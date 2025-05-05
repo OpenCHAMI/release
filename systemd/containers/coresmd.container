@@ -15,7 +15,7 @@ AddCapability=NET_ADMIN
 AddCapability=NET_RAW
 
 # Volumes
-Volume=step-root-ca.volume:/root_ca/:ro,Z
+Volume=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem:/etc/ssl/certs/ca-bundle.crt:ro,Z
 Volume=/etc/openchami/configs/coredhcp.yaml:/etc/coredhcp/config.yaml:ro,Z
 
 # Networks for the Container to use

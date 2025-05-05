@@ -8,7 +8,6 @@ ContainerName=smd-init
 HostName=smd-init
 Image=ghcr.io/openchami/smd:v2.18.0
 
-
 # Environemnt Variables
 Environment=SMD_DBHOST=postgres
 Environment=SMD_DBPORT=5432
