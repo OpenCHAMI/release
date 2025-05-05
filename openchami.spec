@@ -35,6 +35,7 @@ cp -r systemd/containers/* %{buildroot}/etc/containers/systemd/
 cp -r systemd/volumes/* %{buildroot}/etc/containers/systemd/
 cp -r systemd/networks/* %{buildroot}/etc/containers/systemd/
 cp -r systemd/targets/* %{buildroot}/etc/systemd/system/
+cp -r systemd/system/* %{buildroot}/etc/systemd/system/
 cp scripts/bootstrap_openchami.sh %{buildroot}/usr/local/bin/
 cp scripts/openchami_profile.sh %{buildroot}/etc/profile.d/openchami.sh
 cp scripts/multi-psql-db.sh %{buildroot}/etc/openchami/pg-init/multi-psql-db.sh
@@ -47,6 +48,8 @@ chmod 600 %{buildroot}/etc/openchami/configs/openchami.env
 /etc/openchami/configs/*
 /etc/containers/systemd/*
 /etc/systemd/system/openchami.target
+/etc/systemd/system/openchami-cert-renewal.service
+/etc/systemd/system/openchami-cert-renewal.timer
 /usr/local/bin/bootstrap_openchami.sh
 /etc/profile.d/openchami.sh
 /etc/openchami/pg-init/multi-psql-db.sh
