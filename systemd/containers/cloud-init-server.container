@@ -7,7 +7,7 @@ PartOf=openchami.target
 [Container]
 ContainerName=cloud-init-server
 HostName=cloud-init
-Image=ghcr.io/openchami/cloud-init:v1.2.0
+Image=ghcr.io/openchami/cloud-init:v1.2.1
 
 # Environment Variables
 EnvironmentFile=/etc/openchami/configs/openchami.env
