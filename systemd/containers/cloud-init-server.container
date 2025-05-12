@@ -12,6 +12,9 @@ Image=ghcr.io/openchami/cloud-init:v1.2.0
 # Environment Variables
 EnvironmentFile=/etc/openchami/configs/openchami.env
 
+# Run cloud-init-server with impersonation enabled
+Exec=/usr/local/bin/cloud-init-server --impersonation=true
+
 # Networks for the Container to use
 Network=openchami-internal.network
 
