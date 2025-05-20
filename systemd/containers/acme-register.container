@@ -9,7 +9,7 @@ HostName=demo.openchami.cluster
 Image=docker.io/neilpang/acme.sh:3.1.1
 
 # Volumes
-Volume=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem:/root_ca/root_ca.crt:ro,Z
+Volume=step-root-ca.volume:/root_ca/:ro
 Volume=acme-certs:/acme.sh:z
 
 # Networks for the Container to use
