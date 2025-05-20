@@ -1,6 +1,6 @@
 [Unit]
 Description=The smd-init container
-Wants=postgres.service
+Requires=postgres.service
 After=postgres.service
 
 [Container]

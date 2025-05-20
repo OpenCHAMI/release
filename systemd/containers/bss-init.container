@@ -1,6 +1,7 @@
 [Unit]
 Description=The bss-init container
-Wants=smd.service postgres.service
+Wants=smd.service
+Requires postgres.service
 
 [Container]
 ContainerName=bss-init
