@@ -10,7 +10,7 @@ Image=ghcr.io/openchami/local-ca:v0.2.2
 # Volumes
 Volume=step-ca-home.volume:/home/step
 Volume=step-ca-db.volume:/home/step/db
-Volume=step-root-ca.volume:/root_ca/
+Volume=/etc/openchami/certs:/root_ca/:Z
 
 # Environment Variables
 EnvironmentFile=/etc/openchami/configs/openchami.env

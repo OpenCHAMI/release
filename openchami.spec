@@ -24,7 +24,8 @@ This package installs all the necessary files for OpenChami, mostly the quadlet/
 
 %install
 # 1) Install config, unit, and script files
-mkdir -p %{buildroot}/etc/openchami/configs \
+mkdir -p %{buildroot}/etc/openchami/certs \
+         %{buildroot}/etc/openchami/configs \
          %{buildroot}/etc/openchami/pg-init \
          %{buildroot}/etc/containers/systemd \
          %{buildroot}/etc/systemd/system \
@@ -50,6 +51,7 @@ chmod 644 %{buildroot}/etc/openchami/configs/*
 
 %files
 %license LICENSE
+/etc/openchami/certs/
 /etc/openchami/configs/*
 /etc/containers/systemd/*
 /etc/systemd/system/openchami.target
@@ -72,6 +74,9 @@ systemctl daemon-reload
 
 
 %changelog
+* Wed May 21 2025 Devon Bautista <devonb@lanl.gov> - 0.0.23-1
+- Add /etc/openchami/certs
+- Remove step-root-ca.volume
 * Tue May 20 2025 Your Name <you@example.com> - %{version}-%{release}
 - Two-step Skopeo: sync→dir + copy→docker-archive to produce one tag-preserving, deduped tarball  
 - Added Requires: skopeo  
