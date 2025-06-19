@@ -1,6 +1,6 @@
 Name:           openchami
 Version:        %{version}
-Release:        %{release}%{?dist}
+Release:        %{rel}
 Summary:        OpenCHAMI RPM package
 
 License:        MIT
@@ -16,7 +16,7 @@ Requires(post): coreutils
 Requires(post): openssl
 
 %description
-This package installs all the necessary files for OpenChami, mostly the quadlet/systemd-unit files.
+The quadlets, systemd units, and config files for the Open Composable, Heterogeneous, Adaptable Management Infrastructure
 
 %prep
 %setup -q
@@ -71,12 +71,3 @@ systemctl stop firewalld
 %postun
 # reload systemd on uninstall
 systemctl daemon-reload
-
-
-%changelog
-* Tue May 20 2025 Your Name <you@example.com> - %{version}-%{release}
-- Two-step Skopeo: sync→dir + copy→docker-archive to produce one tag-preserving, deduped tarball  
-- Added Requires: skopeo  
-- Retained versioned filename, daemon-reload, cleanup  
-* Thu Jan 25 2024 Alex Lovell-Troy <alovelltroy@lanl.gov> - 0.9.0-1
-- Initial package

@@ -83,7 +83,7 @@ jobs:
         run: |
           rpmbuild -ba ~/rpmbuild/SPECS/*.spec \
             --define "version ${{ env.VERSION }}" \
-            --define "release 1"
+            --define "rel 1"
 
       - name: Sign RPM packages
         run: |
