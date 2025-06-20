@@ -1,0 +1,13 @@
+[Unit]
+Description=Extract and trust OpenCHAMI root CA certificate
+After=step-ca.service
+Requires=step-ca.service
+
+[Service]
+Type=oneshot
+ExecStart=podman cp step-ca:/root_ca/root_ca.crt /etc/pki/ca-trust/source/anchors/openchami.pem
+ExecStart=update-ca-trust
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target
