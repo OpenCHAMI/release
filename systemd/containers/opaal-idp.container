@@ -15,6 +15,7 @@ Volume=/etc/openchami/configs:/opaal/config/:Z
 # Command to run in container
 Exec=/opaal/opaal serve --config /opaal/config/opaal.yaml
 
+EnvironmentFile=/etc/openchami/configs/openchami.env
 # Networks for the Container to use
 Network=openchami-jwt-internal
 

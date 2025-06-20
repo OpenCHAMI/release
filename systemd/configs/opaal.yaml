@@ -7,13 +7,13 @@ server:
     host: "opaal-idp"
     port: 3332
     endpoints:
-      authorization: "https://demo.openchami.cluster/oauth2/authorize"
+      authorization: "https://${SYSTEM_URL}/oauth2/authorize"
     clients:
       - id: openchami
         secret: openchami
         name: openchami
         redirect-uris:
-          - "https://demo.openchami.cluster/oidc/callback"
+          - "https://${SYSTEM_URL}/oidc/callback"
 
 authentication:
   state: ""
@@ -25,7 +25,7 @@ authentication:
       provider:
         issuer: "http://opaal-idp:3332"
       redirect-uris:
-        - "https://demo.openchami.cluster/oidc/callback"
+        - "https://${SYSTEM_URL}/oidc/callback"
 
 
 authorization:
@@ -36,7 +36,7 @@ authorization:
     scope:
       - smd.read
   audience:
-    - https://demo.openchami.cluster/oauth2/token
+    - https://${SYSTEM_URL}/oauth2/token
   key-path: ./keys
   endpoints:
     issuer: http://hydra:4444

@@ -21,7 +21,6 @@ Volume=/etc/openchami/configs/coredhcp.yaml:/etc/coredhcp/config.yaml:ro,Z
 # Networks for the Container to use
 Network=host
 
-
 # Unsupported by generator options
 # Proxy settings
 PodmanArgs=--http-proxy=false
