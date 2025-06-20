@@ -57,6 +57,7 @@ chmod 644 %{buildroot}/etc/openchami/configs/*
 /etc/systemd/system/openchami.target
 /etc/systemd/system/openchami-cert-renewal.service
 /etc/systemd/system/openchami-cert-renewal.timer
+/etc/systemd/system/openchami-cert-trust.service
 /usr/local/bin/bootstrap_openchami.sh
 /etc/profile.d/openchami.sh
 /etc/openchami/pg-init/multi-psql-db.sh
