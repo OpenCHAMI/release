@@ -1,6 +1,6 @@
 Name:           openchami
 Version:        %{version}
-Release:        %{release}%{?dist}
+Release:        %{rel}
 Summary:        OpenCHAMI RPM package
 
 License:        MIT
@@ -16,7 +16,7 @@ Requires(post): coreutils
 Requires(post): openssl
 
 %description
-This package installs all the necessary files for OpenChami, mostly the quadlet/systemd-unit files.
+The quadlets, systemd units, and config files for the Open Composable, Heterogeneous, Adaptable Management Infrastructure
 
 %prep
 %setup -q
@@ -31,7 +31,8 @@ mkdir -p %{buildroot}/etc/openchami/configs \
          %{buildroot}/etc/containers/systemd \
          %{buildroot}/etc/systemd/system \
          %{buildroot}/usr/local/bin \
-         %{buildroot}/etc/profile.d
+         %{buildroot}/etc/profile.d \
+         %{buildroot}/usr/libexec/openchami
 
 cp -r systemd/configs/*           %{buildroot}/etc/openchami/configs/
 cp -r systemd/containers/*        %{buildroot}/etc/containers/systemd/
@@ -39,12 +40,12 @@ cp -r systemd/volumes/*           %{buildroot}/etc/containers/systemd/
 cp -r systemd/networks/*          %{buildroot}/etc/containers/systemd/
 cp -r systemd/targets/*           %{buildroot}/etc/systemd/system/
 cp -r systemd/system/*            %{buildroot}/etc/systemd/system/
-cp scripts/bootstrap_openchami.sh %{buildroot}/usr/local/bin/
+cp scripts/bootstrap_openchami.sh %{buildroot}/usr/libexec/openchami/
 cp scripts/openchami_profile.sh   %{buildroot}/etc/profile.d/openchami.sh
 cp scripts/multi-psql-db.sh       %{buildroot}/etc/openchami/pg-init/multi-psql-db.sh
 cp scripts/ohpc-nodes.sh          %{buildroot}/usr/libexec/openchami/
 
-chmod +x %{buildroot}/usr/local/bin/bootstrap_openchami.sh
+chmod +x %{buildroot}/usr/libexec/openchami/bootstrap_openchami.sh
 chmod +x %{buildroot}/usr/libexec/openchami/ohpc-nodes.sh
 chmod 600 %{buildroot}/etc/openchami/configs/openchami.env
 chmod 644 %{buildroot}/etc/openchami/configs/*
@@ -59,7 +60,8 @@ chmod 644 %{buildroot}/etc/openchami/configs/*
 /etc/systemd/system/openchami.target
 /etc/systemd/system/openchami-cert-renewal.service
 /etc/systemd/system/openchami-cert-renewal.timer
-/usr/local/bin/bootstrap_openchami.sh
+/etc/systemd/system/openchami-cert-trust.service
+/usr/libexec/openchami/bootstrap_openchami.sh
 /etc/profile.d/openchami.sh
 /etc/openchami/pg-init/multi-psql-db.sh
 
@@ -68,17 +70,8 @@ chmod 644 %{buildroot}/etc/openchami/configs/*
 systemctl daemon-reload
 # bootstrap
 systemctl stop firewalld
-/usr/local/bin/bootstrap_openchami.sh
+/usr/libexec/openchami/bootstrap_openchami.sh
 
 %postun
 # reload systemd on uninstall
 systemctl daemon-reload
-
-
-%changelog
-* Tue May 20 2025 Your Name <you@example.com> - %{version}-%{release}
-- Two-step Skopeo: sync→dir + copy→docker-archive to produce one tag-preserving, deduped tarball  
-- Added Requires: skopeo  
-- Retained versioned filename, daemon-reload, cleanup  
-* Thu Jan 25 2024 Alex Lovell-Troy <alovelltroy@lanl.gov> - 0.9.0-1
-- Initial package
