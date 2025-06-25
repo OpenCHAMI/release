@@ -1,0 +1,49 @@
+#!/bin/bash
+
+update_dns() {
+    local system_fqdn=$1
+    local short_name="${system_fqdn%%.*}" 
+    local dns_name="${system_fqdn#*.}"
+    
+    # Update names in environment and acme containers
+    sed -i "s/^SYSTEM_NAME=.*/SYSTEM_NAME=${short_name}/" /etc/openchami/configs/openchami.env
+    sed -i "s/^SYSTEM_DOMAIN=.*/SYSTEM_DOMAIN=${dns_name}/" /etc/openchami/configs/openchami.env
+    sed -i "s/^SYSTEM_URL=.*/SYSTEM_URL=${system_fqdn}/" /etc/openchami/configs/openchami.env
+    sed -i "s|^URLS_SELF_ISSUER=.*|URLS_SELF_ISSUER=https://${system_fqdn}|" /etc/openchami/configs/openchami.env
+    sed -i "s|^URLS_SELF_PUBLIC=.*|URLS_SELF_PUBLIC=https://${system_fqdn}|" /etc/openchami/configs/openchami.env
+    sed -i "s|^URLS_LOGIN=.*|URLS_LOGIN=https://${system_fqdn}/login|" /etc/openchami/configs/openchami.env
+    sed -i "s|^URLS_CONSENT=.*|URLS_CONSENT=https://${system_fqdn}/consent|" /etc/openchami/configs/openchami.env
+    sed -i "s|^URLS_LOGOUT=.*|URLS_LOGOUT=https://${system_fqdn}/logout|" /etc/openchami/configs/openchami.env
+    sed -i "s|-d .* \\\\|-d ${system_fqdn} \\\\|" /etc/containers/systemd/acme-deploy.container
+    sed -i "s/^ContainerName=.*/ContainerName=${system_fqdn}/" /etc/containers/systemd/acme-register.container
+    sed -i "s/^HostName=.*/HostName=${system_fqdn}/" /etc/containers/systemd/acme-register.container
+    sed -i "s|-d .* \\\\|-d ${system_fqdn} \\\\|" /etc/containers/systemd/acme-register.container
+
+    # Re-apply Certificates
+    systemctl restart acme-deploy
+    systemctl restart haproxy
+}
+
+help_page() {
+    echo "OpenCHAMI Certificate Update"
+    echo "Usage: $0 update (dns name) ex. demo.openchami.cluster"
+
+}
+case "$1" in 
+    update)
+        if [[ -z "$2" ]]; then
+            help_page
+        else
+            if [[ $EUID -ne 0 ]]; then
+                echo "This script must be run as root" 
+                exit 1
+            else
+                update_dns "$2"
+            fi
+        fi
+        ;;
+    *)
+    help_page
+    exit 1
+    ;;
+esac

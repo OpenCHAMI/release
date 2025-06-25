@@ -1,11 +1,18 @@
 server4:
-  listen:
-    - "%virbr-openchami"
+# You can configure the specific interfaces that you want OpenCHAMI to listen on by 
+# uncommenting the lines below and setting the interface
+  # listen:
+  #   - "%virbr-openchami"
   plugins:
-    - server_id: 172.16.0.254
-    - dns: 172.16.0.254
-    - router: 172.16.0.254
+# You are able to set the IP address of the system in server_id as the place to look for a DHCP server
+# DNS is able to be set to whatever you want but it is much easier if you keep it set to the server IP
+# Router is also able to be set to whatever you network router address is 
+    # - server_id: 172.16.0.254
+    # - dns: 172.16.0.254
+    # - router: 172.16.0.254
     - netmask: 255.255.255.0
-    - coresmd: https://demo.openchami.cluster:8443 http://172.16.0.254:8081 /root_ca/root_ca.crt 30s 1h false
-    - bootloop: /tmp/coredhcp.db default 5m 172.16.0.200 172.16.0.250
+# The lines below define where the system should assign ip addresses for systems that do not have
+# mac addresses stored in SMD
+    # - coresmd: https://demo.openchami.cluster:8443 http://172.16.0.254:8081 /root_ca/root_ca.crt 30s 1h false
+    # - bootloop: /tmp/coredhcp.db default 5m 172.16.0.200 172.16.0.250
 

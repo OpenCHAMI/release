@@ -20,11 +20,14 @@ Network=openchami-cert-internal.network
 # haproxy deploy hook requires the directory to be specified in an environment variable
 Environment=DEPLOY_HAPROXY_PEM_PATH=/etc/haproxy/certs
 
+# Environment Variables
+EnvironmentFile=/etc/openchami/configs/openchami.env
+
 # Command
 Exec=--deploy \
   --ca-bundle /root_ca/root_ca.crt \
   --server https://step-ca:9000/acme/acme/directory \
-  -d demo.openchami.cluster \
+  -d ${SYSTEM_URL} \
   --home /acme.sh \
   --standalone \
   --deploy-hook haproxy \

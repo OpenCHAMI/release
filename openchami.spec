@@ -14,6 +14,8 @@ Requires:       jq
 Requires:       curl
 Requires(post): coreutils
 Requires(post): openssl
+Requires(post): hostname
+Requires(post): sed
 
 %description
 The quadlets, systemd units, and config files for the Open Composable, Heterogeneous, Adaptable Management Infrastructure
@@ -41,10 +43,13 @@ cp -r systemd/networks/*          %{buildroot}/etc/containers/systemd/
 cp -r systemd/targets/*           %{buildroot}/etc/systemd/system/
 cp -r systemd/system/*            %{buildroot}/etc/systemd/system/
 cp scripts/bootstrap_openchami.sh %{buildroot}/usr/libexec/openchami/
+cp script/ochami-certificate-update %{buildroot}/usr/bin/
 cp scripts/openchami_profile.sh   %{buildroot}/etc/profile.d/openchami.sh
 cp scripts/multi-psql-db.sh       %{buildroot}/etc/openchami/pg-init/multi-psql-db.sh
 
 chmod +x %{buildroot}/usr/libexec/openchami/bootstrap_openchami.sh
+chmod +x %{buildroot}/usr/bin/ochami-certificate-update
+
 chmod 600 %{buildroot}/etc/openchami/configs/openchami.env
 chmod 644 %{buildroot}/etc/openchami/configs/*
 

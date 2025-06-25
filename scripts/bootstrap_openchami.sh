@@ -23,6 +23,29 @@ create_secret_if_not_exists() {
   fi
 }
 
+# Function to define system_name and system_domain in the environment file
+generate_environment_file() {
+  local short_name=$(hostname -s)
+  local dns_name=$(hostname -d)
+  local system_fqdn=$(hostname)
+  sed -i "s/^SYSTEM_NAME=.*/SYSTEM_NAME=${short_name}/" /etc/openchami/configs/openchami.env
+  sed -i "s/^SYSTEM_DOMAIN=.*/SYSTEM_DOMAIN=${dns_name}/" /etc/openchami/configs/openchami.env
+  sed -i "s/^SYSTEM_URL=.*/SYSTEM_URL=${system_fqdn}/" /etc/openchami/configs/openchami.env
+  sed -i "s|^URLS_SELF_ISSUER=.*|URLS_SELF_ISSUER=https://${system_fqdn}|" /etc/openchami/configs/openchami.env
+  sed -i "s|^URLS_SELF_PUBLIC=.*|URLS_SELF_PUBLIC=https://${system_fqdn}|" /etc/openchami/configs/openchami.env
+  sed -i "s|^URLS_LOGIN=.*|URLS_LOGIN=https://${system_fqdn}/login|" /etc/openchami/configs/openchami.env
+  sed -i "s|^URLS_CONSENT=.*|URLS_CONSENT=https://${system_fqdn}/consent|" /etc/openchami/configs/openchami.env
+  sed -i "s|^URLS_LOGOUT=.*|URLS_LOGOUT=https://${system_fqdn}/logout|" /etc/openchami/configs/openchami.env
+}
+
+acme_correction() {
+  local system_fqdn=$(hostname)
+  sed -i "s|-d .* \\\\|-d ${system_fqdn} \\\\|" /etc/containers/systemd/acme-deploy.container
+  sed -i "s/^ContainerName=.*/ContainerName=${system_fqdn}/" /etc/containers/systemd/acme-register.container
+  sed -i "s/^HostName=.*/HostName=${system_fqdn}/" /etc/containers/systemd/acme-register.container
+  sed -i "s|-d .* \\\\|-d ${system_fqdn} \\\\|" /etc/containers/systemd/acme-register.container
+}
+
 # Check and create secrets with random passwords if needed
 
 # Postgres Password
@@ -52,3 +75,9 @@ create_secret_if_not_exists "hydra_dsn" "$HYDRA_DSN"
 # POSTGRES_MULTIPLE_DATABASES
 POSTGRES_MULTIPLE_DATABASES="hmsds:smd-user:$(podman secret inspect smd_postgres_password --showsecret | jq -r '.[0].SecretData'),bssdb:bss-user:$(podman secret inspect bss_postgres_password --showsecret | jq -r '.[0].SecretData'),hydradb:hydra-user:$(podman secret inspect hydra_postgres_password --showsecret | jq -r '.[0].SecretData')"
 create_secret_if_not_exists "postgres_multiple_databases" "$POSTGRES_MULTIPLE_DATABASES"
+
+# openchami.env Configuration
+generate_environment_file
+
+# Correct the ACME files
+acme_correction
