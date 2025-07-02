@@ -1,0 +1,66 @@
+name: Build and Test for Pull Requests
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Test Build the RPM in pull request.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  build-rpm:
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+    env:
+      RELEASE_TAG: ${{ github.event.inputs.release_tag }}
+
+    steps:
+      - name: Install dependencies
+        run: |
+          dnf install -y \
+            rpm-build rpm-sign rpmlint gcc make redhat-rpm-config \
+            gpg gpg2 gnupg2 expect rpmdevtools createrepo
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: get_version
+        run: |
+          if [ -n "$RELEASE_TAG" ]; then
+            VERSION=${RELEASE_TAG#v}
+          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          else
+            VERSION=0.0.0
+          fi
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "Version is ${VERSION}"
+
+      - name: Setup RPM build environment
+        run: |
+          rpmdev-setuptree
+          cp ./*.spec ~/rpmbuild/SPECS/
+          cp -r ./* ~/rpmbuild/SOURCES/ || true
+
+      - name: Create source tarball
+        run: |
+          mkdir -p ~/rpmbuild/SOURCES/openchami-${{ env.VERSION }}
+          cp -r ./* ~/rpmbuild/SOURCES/openchami-${{ env.VERSION }}/
+          tar -czf ~/rpmbuild/SOURCES/openchami-${{ env.VERSION }}.tar.gz \
+            -C ~/rpmbuild/SOURCES openchami-${{ env.VERSION }} \
+            --transform "s|openchami-${{ env.VERSION }}-${{ env.COMMIT_SHA }}|openchami-${{ env.VERSION }}|"
+
+      - name: Build RPM package
+        run: |
+          rpmbuild -ba ~/rpmbuild/SPECS/*.spec \
+            --define "version ${{ env.VERSION }}" \
+            --define "release 1"
