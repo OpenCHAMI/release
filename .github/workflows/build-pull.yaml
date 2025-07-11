@@ -8,7 +8,7 @@ on:
     inputs:
       release_tag:
         description: 'Test Build the RPM in pull request.'
-        required: false
+        required: true
         default: ''
 
 permissions:
