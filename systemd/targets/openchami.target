@@ -1,4 +1,5 @@
 [Unit]
 Description=Group of OpenCHAMI-related services
 Requires=bss.service smd.service opaal.service cloud-init-server.service coresmd-coredhcp.service step-ca.service haproxy.service
-After=bss-init.service smd-init.service postgres.service
+Wants=coresmd-coredns.service
+After=bss-init.service smd-init.service postgres.service coresmd-coredns.service
