@@ -1,0 +1,19 @@
+[Unit]
+Description=The power-control container
+Requires=smd.service
+After=smd.service
+PartOf=openchami.target
+
+[Container]
+ContainerName=pcs
+HostName=pcs
+Image=docker.io/traines/power-control:v1.1.0-debug.1
+
+EnvironmentFile=/etc/openchami/configs/openchami.env
+
+Network=openchami-internal.network
+
+PodmanArgs=--http-proxy=false
+
+[Service]
+Restart=always

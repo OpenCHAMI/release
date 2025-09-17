@@ -75,8 +75,12 @@ create_secret_if_not_exists "hydra_system_secret" "$hydra_system_secret"
 HYDRA_DSN="postgres://hydra-user:$(podman secret inspect hydra_postgres_password --showsecret | jq -r '.[0].SecretData')@postgres:5432/hydradb?sslmode=disable&max_conns=20&max_idle_conns=4"
 create_secret_if_not_exists "hydra_dsn" "$HYDRA_DSN"
 
+# PCS Postgres Password
+pcs_postgres_password=$(generate_random_password)
+create_secret_if_not_exists "pcs_postgres_password" "$pcs_postgres_password"
+
 # POSTGRES_MULTIPLE_DATABASES
-POSTGRES_MULTIPLE_DATABASES="hmsds:smd-user:$(podman secret inspect smd_postgres_password --showsecret | jq -r '.[0].SecretData'),bssdb:bss-user:$(podman secret inspect bss_postgres_password --showsecret | jq -r '.[0].SecretData'),hydradb:hydra-user:$(podman secret inspect hydra_postgres_password --showsecret | jq -r '.[0].SecretData')"
+POSTGRES_MULTIPLE_DATABASES="hmsds:smd-user:$(podman secret inspect smd_postgres_password --showsecret | jq -r '.[0].SecretData'),bssdb:bss-user:$(podman secret inspect bss_postgres_password --showsecret | jq -r '.[0].SecretData'),hydradb:hydra-user:$(podman secret inspect hydra_postgres_password --showsecret | jq -r '.[0].SecretData'),pcs:pcs-user:$(podman secret inspect pcs_postgres_password --showsecret | jq -r '.[0].SecretData')"
 create_secret_if_not_exists "postgres_multiple_databases" "$POSTGRES_MULTIPLE_DATABASES"
 
 # openchami.env Configuration

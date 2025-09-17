@@ -21,6 +21,7 @@ Secret=postgres_password,type=env,target=POSTGRES_PASSWORD
 Secret=bss_postgres_password,type=env,target=BSS_POSTGRES_PASSWORD
 Secret=smd_postgres_password,type=env,target=SMD_POSTGRES_PASSWORD
 Secret=hydra_postgres_password,type=env,target=HYDRA_POSTGRES_PASSWORD
+Secret=pcs_postgres_password,type=env,target=PCS_POSTGRES_PASSWORD
 Secret=postgres_multiple_databases,type=env,target=POSTGRES_MULTIPLE_DATABASES
 
 
