@@ -2,6 +2,7 @@
 Description=The smd-init container
 Requires=postgres.service
 After=postgres.service
+PartOf=openchami.target
 
 [Container]
 ContainerName=smd-init
