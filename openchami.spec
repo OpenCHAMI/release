@@ -71,6 +71,12 @@ chmod 644 %{buildroot}/etc/openchami/configs/*
 /etc/openchami/pg-init/multi-psql-db.sh
 /usr/bin/openchami-certificate-update
 
+%pre
+if [ -f /etc/containers/systemd/coresmd.container ]; then
+	echo 'WARNING: /etc/containers/systemd/coresmd.container as been replaced by /etc/containers/systemd/coresmd-coredhcp.container.'
+	echo '         Migrate to coresmd-coredhcp to avoid any issues.'
+fi
+
 %post
 # reload systemd so new units are seen
 systemctl daemon-reload
