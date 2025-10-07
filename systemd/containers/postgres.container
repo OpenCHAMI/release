@@ -1,8 +1,8 @@
 [Unit]
 Description=The postgres container
 PartOf=openchami.target
-Requires=openchami-internal.network openchami-jwt-internal.network postgres-data-volume.service
-After=openchami-internal.network openchami-jwt-internal.network postgres-data-volume.service
+Requires=openchami-internal-network.service openchami-jwt-internal-network.service postgres-data-volume.service
+After=openchami-internal-network.service openchami-jwt-internal-network.service postgres-data-volume.service
 
 [Container]
 ContainerName=postgres
