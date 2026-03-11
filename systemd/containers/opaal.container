@@ -9,7 +9,7 @@ After=opaal-idp.service
 [Container]
 ContainerName=opaal
 HostName=opaal
-Image=ghcr.io/openchami/opaal:v0.3.10
+Image=ghcr.io/openchami/opaal:v0.3.12
 
 
 # Volumes
