@@ -7,7 +7,7 @@ PartOf=openchami.target
 [Container]
 ContainerName=opaal-idp
 HostName=opaal-idp
-Image=ghcr.io/openchami/opaal:v0.3.10
+Image=ghcr.io/openchami/opaal:v0.3.12
 
 # Volumes
 Volume=/etc/openchami/configs:/opaal/config/:Z
