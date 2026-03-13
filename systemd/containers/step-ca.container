@@ -7,7 +7,7 @@ After=openchami-cert-internal-network.service step-ca-home-volume.service step-c
 [Container]
 ContainerName=step-ca
 HostName=step-ca
-Image=ghcr.io/openchami/local-ca:v0.2.2
+Image=ghcr.io/openchami/local-ca:v0.2.4
 
 # Volumes
 Volume=step-ca-home.volume:/home/step
