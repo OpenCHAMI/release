@@ -37,11 +37,27 @@ jobs:
       - name: Import GPG key
         run: |
           echo "$GPG_PRIVATE_KEY" | base64 --decode | gpg --import --batch --yes
-          gpg -K --keyid-format long
-          gpg --list-secret-keys --with-subkey-fingerprints --keyid-format long
-          gpg --list-secret-keys --with-colons
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          
+      - name: Show signing subkey expiration
+        shell: bash
+        run: |
+          gpg --list-secret-keys --with-colons \
+          | awk -F: '
+            $1=="ssb" && $12 ~ /s/ {
+              keyid = $5
+              expires = $7
+              if (expires == "" || expires == "0") {
+                edate = "never"
+              } else {
+                cmd = "date -u -d @" expires " +\"%Y-%m-%d %H:%M:%S UTC\""
+                cmd | getline edate
+                close(cmd)
+              }
+              printf "signing subkey %s expires: %s\n", keyid, edate
+             }
+          '   
 
       - name: Get version
         id: get_version
