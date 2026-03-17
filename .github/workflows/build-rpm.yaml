@@ -74,6 +74,7 @@ jobs:
         run: |
           echo "$GPG_PASSPHRASE" | gpg --batch --yes --passphrase-fd 0 --pinentry-mode loopback \
             --armor --detach-sign \
+            --local-user admin@openchami.org \
             --output ~/rpmbuild/SOURCES/openchami-${{ env.VERSION }}.tar.gz.asc \
             ~/rpmbuild/SOURCES/openchami-${{ env.VERSION }}.tar.gz
         env:
