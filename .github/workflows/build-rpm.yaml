@@ -23,10 +23,6 @@ jobs:
       image: fedora:latest
     env:
       RELEASE_TAG: ${{ github.event.inputs.release_tag }}
-      EPHEMERAL_KEY_NAME: OpenCHAMI RPM Build
-      EPHEMERAL_KEY_COMMENT: GitHub Actions ephemeral signing key
-      EPHEMERAL_KEY_EMAIL: ci+${{ github.run_id }}@build.local
-      EPHEMERAL_KEY_EXPIRE: 1d
 
     steps:
       - name: Install dependencies
@@ -38,22 +34,39 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Generate and sign ephemeral key
-        id: ephemeral_key
-        uses: OpenCHAMI/gpg-signing-manager/actions/gpg-ephemeral-key@main
-        with:
-          subkey-armored: ${{ secrets.GPG_SUBKEY_B64 }}
-          name: ${{ env.EPHEMERAL_KEY_NAME }}
-          comment: ${{ env.EPHEMERAL_KEY_COMMENT }}
-          email: ${{ env.EPHEMERAL_KEY_EMAIL }}
-          expire: ${{ env.EPHEMERAL_KEY_EXPIRE }}
+      - name: Import repo signing key
+        run: |
+          printf '%s' '${{ secrets.GPG_SUBKEY_B64 }}' | base64 --decode > repo-signing-subkey.asc
+          gpg --batch --import repo-signing-subkey.asc
+
+      - name: Discover repo signing key
+        id: repo_key
+        shell: bash
+        run: |
+          keyid=$(gpg --list-secret-keys --with-colons | awk -F: '($1=="sec" || $1=="ssb") && index($12, "s") { print $5; exit }')
+          if [ -z "$keyid" ]; then
+            echo 'Could not find imported signing-capable secret key' >&2
+            exit 1
+          fi
+
+          fingerprint=$(gpg --list-secret-keys --with-colons | awk -F: -v keyid="$keyid" '
+            ($1=="sec" || $1=="ssb") && $5==keyid { capture=1; next }
+            capture && $1=="fpr" { print $10; exit }
+          ')
+          if [ -z "$fingerprint" ]; then
+            echo 'Could not determine imported signing key fingerprint' >&2
+            exit 1
+          fi
+
+          echo "keyid=${keyid}" >> "$GITHUB_OUTPUT"
+          echo "fingerprint=${fingerprint}" >> "$GITHUB_OUTPUT"
 
       - name: Show signing subkey expiration
         shell: bash
         run: |
           gpg --list-secret-keys --with-colons \
           | awk -F: '
-            ($1=="ssb" || $1=="sec") && $5 == "${{ steps.ephemeral_key.outputs.repo-signing-keyid }}" {
+            ($1=="ssb" || $1=="sec") && $5 == "${{ steps.repo_key.outputs.keyid }}" {
               keyid = $5
               expires = $7
               if (expires == "" || expires == "0") {
@@ -81,10 +94,10 @@ jobs:
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Version is ${VERSION}"
 
-      - name: Export ephemeral public key
+      - name: Export repo public key
         shell: bash
         run: |
-          printf '%s' '${{ steps.ephemeral_key.outputs.ephemeral-public-key }}' | base64 --decode > public_gpg_key.asc
+          gpg --armor --export '${{ steps.repo_key.outputs.fingerprint }}' > public_gpg_key.asc
 
       - name: Setup RPM build environment
         run: |
@@ -103,7 +116,7 @@ jobs:
         run: |
           gpg --batch --yes \
             --armor --detach-sign \
-            --local-user '${{ steps.ephemeral_key.outputs.ephemeral-fingerprint }}' \
+            --local-user '${{ steps.repo_key.outputs.keyid }}' \
             --output ~/rpmbuild/SOURCES/openchami-${VERSION}.tar.gz.asc \
             ~/rpmbuild/SOURCES/openchami-${VERSION}.tar.gz
   
@@ -117,9 +130,9 @@ jobs:
         run: |
           for rpm in $(find ~/rpmbuild/RPMS/ -type f -name "*.rpm"); do
             gpg --batch --yes \
-              --local-user '${{ steps.ephemeral_key.outputs.ephemeral-fingerprint }}' \
+              --local-user '${{ steps.repo_key.outputs.keyid }}' \
               --detach-sign --armor "$rpm"
-            rpm --define "_gpg_name ${{ steps.ephemeral_key.outputs.ephemeral-fingerprint }}" --addsign "$rpm"
+            rpm --define "_gpg_name ${{ steps.repo_key.outputs.keyid }}" --addsign "$rpm"
           done
 
       - name: Find RPM file
