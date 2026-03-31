@@ -27,6 +27,13 @@ Clean built RPMs in repo directory:
 make clean
 ```
 
+## Automated RPM Signing
+
+The GitHub release workflow signs built RPMs with the repository signing subkey
+stored in the `GPG_SUBKEY_B64` repository secret. The workflow also exports the
+matching ASCII-armored public key as a release asset so downstream consumers can
+verify the published RPM signature.
+
 ## Current Release
 
 OpenCHAMI is in development without an initial release.  We expect a first supported release in Q1 2025.  If you would like to follow the most current, stable configuration, each of the partners maintains a deployment recipe that will become a release candidate in our [Deployment Recipes](https://github.com/OpenCHAMI/deployment-recipes) Repository.

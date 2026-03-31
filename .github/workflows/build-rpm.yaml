@@ -34,39 +34,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Import repo signing key
-        run: |
-          printf '%s' '${{ secrets.GPG_SUBKEY_B64 }}' | base64 --decode > repo-signing-subkey.asc
-          gpg --batch --import repo-signing-subkey.asc
+      - name: Check signing subkey expiration
+        uses: OpenCHAMI/gpg-signing-manager/actions/check-subkey-expiration@main
+        with:
+          subkey-armored-b64: ${{ secrets.GPG_SUBKEY_B64 }}
+          warn-days: '30'
 
-      - name: Discover repo signing key
+      - name: Setup RPM signing
         id: repo_key
-        shell: bash
-        run: |
-          keyid=$(gpg --list-secret-keys --with-colons | awk -F: '($1=="sec" || $1=="ssb") && index($12, "s") { print $5; exit }')
-          if [ -z "$keyid" ]; then
-            echo 'Could not find imported signing-capable secret key' >&2
-            exit 1
-          fi
-
-          fingerprint=$(gpg --list-secret-keys --with-colons | awk -F: -v keyid="$keyid" '
-            ($1=="sec" || $1=="ssb") && $5==keyid { capture=1; next }
-            capture && $1=="fpr" { print $10; exit }
-          ')
-          if [ -z "$fingerprint" ]; then
-            echo 'Could not determine imported signing key fingerprint' >&2
-            exit 1
-          fi
-
-          echo "keyid=${keyid}" >> "$GITHUB_OUTPUT"
-          echo "fingerprint=${fingerprint}" >> "$GITHUB_OUTPUT"
+        uses: OpenCHAMI/gpg-signing-manager/actions/setup-rpm-signing@main
+        with:
+          subkey-armored-b64: ${{ secrets.GPG_SUBKEY_B64 }}
+          public-key-output: public_gpg_key.asc
 
       - name: Show signing subkey expiration
         shell: bash
         run: |
           gpg --list-secret-keys --with-colons \
           | awk -F: '
-            ($1=="ssb" || $1=="sec") && $5 == "${{ steps.repo_key.outputs.keyid }}" {
+            ($1=="ssb" || $1=="sec") && $5 == "${{ steps.repo_key.outputs.repo-signing-keyid }}" {
               keyid = $5
               expires = $7
               if (expires == "" || expires == "0") {
@@ -94,31 +80,6 @@ jobs:
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Version is ${VERSION}"
 
-      - name: Export repo public key
-        shell: bash
-        run: |
-          gpg --armor --export '${{ steps.repo_key.outputs.fingerprint }}' > public_gpg_key.asc
-
-      - name: Configure RPM signing
-        shell: bash
-        run: |
-          cat > ~/.rpmmacros <<EOF
-          %_signature gpg
-          %_openpgp_sign gpg
-          %_openpgp_sign_id ${{ steps.repo_key.outputs.fingerprint }}
-          %_gpg_path %{getenv:HOME}/.gnupg
-          %_gpg_name ${{ steps.repo_key.outputs.fingerprint }}
-          %_gpgbin /usr/bin/gpg
-          %__gpg /usr/bin/gpg
-          %_gpg_digest_algo sha256
-          %__gpg_sign_cmd %{_gpgbin} \
-              --batch --yes --no-tty --pinentry-mode loopback --no-armor \
-              %{?_gpg_digest_algo:--digest-algo %{_gpg_digest_algo}} \
-              --local-user "%{_openpgp_sign_id}" \
-              --detach-sign --output %{__signature_filename} %{__plaintext_filename}
-          EOF
-          gpgconf --kill gpg-agent || true
-
       - name: Setup RPM build environment
         run: |
           rpmdev-setuptree
@@ -138,7 +99,7 @@ jobs:
           gpg --batch --yes \
             --no-tty --pinentry-mode loopback \
             --armor --detach-sign \
-            --local-user '${{ steps.repo_key.outputs.keyid }}' \
+            --local-user '${{ steps.repo_key.outputs.repo-signing-keyid }}' \
             --output ~/rpmbuild/SOURCES/openchami-${VERSION}.tar.gz.asc \
             ~/rpmbuild/SOURCES/openchami-${VERSION}.tar.gz
   
@@ -151,11 +112,17 @@ jobs:
       - name: Sign RPM packages
         shell: bash
         run: |
+          set -euo pipefail
           unset GPG_TTY
+          echo "Using RPM signing fingerprint: ${{ steps.repo_key.outputs.repo-signing-fingerprint }}"
+          echo 'Configured ~/.rpmmacros:'
+          cat ~/.rpmmacros
+
           found=0
           while IFS= read -r -d '' rpm_file; do
             found=1
-            rpmsign --key-id '${{ steps.repo_key.outputs.fingerprint }}' --addsign "$rpm_file"
+            echo "Signing RPM: $rpm_file"
+            rpmsign --key-id '${{ steps.repo_key.outputs.repo-signing-fingerprint }}' --addsign "$rpm_file"
           done < <(find ~/rpmbuild/RPMS/ -type f -name "*.rpm" -print0)
 
           if [ "$found" -eq 0 ]; then
