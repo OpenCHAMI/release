@@ -45,26 +45,7 @@ jobs:
         uses: OpenCHAMI/gpg-signing-manager/actions/setup-rpm-signing@main
         with:
           subkey-armored-b64: ${{ secrets.GPG_SUBKEY_B64 }}
-          public-key-output: public_gpg_key.asc
-
-      - name: Show signing subkey expiration
-        shell: bash
-        run: |
-          gpg --list-secret-keys --with-colons \
-          | awk -F: '
-            ($1=="ssb" || $1=="sec") && $5 == "${{ steps.repo_key.outputs.repo-signing-keyid }}" {
-              keyid = $5
-              expires = $7
-              if (expires == "" || expires == "0") {
-                edate = "never"
-              } else {
-                cmd = "date -u -d @" expires " +\"%Y-%m-%d %H:%M:%S UTC\""
-                cmd | getline edate
-                close(cmd)
-              }
-              printf "signing subkey %s expires: %s\n", keyid, edate
-             }
-          '   
+          public-key-output: public_gpg_key.asc 
 
       - name: Get version
         id: get_version
@@ -94,12 +75,18 @@ jobs:
             -C ~/rpmbuild/SOURCES openchami-${VERSION}
 
       - name: Sign source tarball
+        env:
+          GPG_SIGNING_KEYID: ${{ steps.repo_key.outputs.repo-signing-keyid }}
+          GPG_SIGNING_FINGERPRINT: ${{ steps.repo_key.outputs.repo-signing-fingerprint }}
         run: |
+          set -euo pipefail
           unset GPG_TTY
+          echo "Signing source tarball with key: ${GPG_SIGNING_KEYID} (${GPG_SIGNING_FINGERPRINT})"
+          gpg --batch --list-secret-keys --keyid-format LONG "${GPG_SIGNING_FINGERPRINT}"
           gpg --batch --yes \
             --no-tty --pinentry-mode loopback \
             --armor --detach-sign \
-            --local-user '${{ steps.repo_key.outputs.repo-signing-keyid }}' \
+            --local-user "${GPG_SIGNING_KEYID}" \
             --output ~/rpmbuild/SOURCES/openchami-${VERSION}.tar.gz.asc \
             ~/rpmbuild/SOURCES/openchami-${VERSION}.tar.gz
   
@@ -111,10 +98,14 @@ jobs:
 
       - name: Sign RPM packages
         shell: bash
+        env:
+          GPG_SIGNING_KEYID: ${{ steps.repo_key.outputs.repo-signing-keyid }}
+          GPG_SIGNING_FINGERPRINT: ${{ steps.repo_key.outputs.repo-signing-fingerprint }}
         run: |
           set -euo pipefail
           unset GPG_TTY
-          echo "Using RPM signing fingerprint: ${{ steps.repo_key.outputs.repo-signing-fingerprint }}"
+          echo "Using RPM signing key: ${GPG_SIGNING_KEYID} (${GPG_SIGNING_FINGERPRINT})"
+          gpg --batch --list-secret-keys --keyid-format LONG "${GPG_SIGNING_FINGERPRINT}"
           echo 'Configured ~/.rpmmacros:'
           cat ~/.rpmmacros
 
@@ -122,7 +113,7 @@ jobs:
           while IFS= read -r -d '' rpm_file; do
             found=1
             echo "Signing RPM: $rpm_file"
-            rpmsign --key-id '${{ steps.repo_key.outputs.repo-signing-fingerprint }}' --addsign "$rpm_file"
+            rpmsign --key-id "${GPG_SIGNING_KEYID}" --addsign "$rpm_file"
           done < <(find ~/rpmbuild/RPMS/ -type f -name "*.rpm" -print0)
 
           if [ "$found" -eq 0 ]; then
