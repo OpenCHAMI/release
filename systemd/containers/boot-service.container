@@ -1,0 +1,21 @@
+[Unit]
+Description=The boot-service container
+PartOf=openchami.target
+
+# Ensure SMD has started already
+Wants=smd.service
+After=smd.service
+
+[Container]
+ContainerName=boot-service
+HostName=boot-service
+Image=ghcr.io/openchami/boot-service:v0.1.0
+
+# Networks for the Container to use
+Network=openchami-internal.network
+
+# Proxy settings
+PodmanArgs=--http-proxy=false
+
+[Service]
+Restart=always
