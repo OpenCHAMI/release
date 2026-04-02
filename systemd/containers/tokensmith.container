@@ -1,0 +1,28 @@
+[Unit]
+Description=The tokensmith container
+Wants=hydra-gen-jwks.service
+After=hydra-gen-jwks.service
+PartOf=openchami.target
+
+[Container]
+ContainerName=tokensmith
+HostName=tokensmith
+Image=ghcr.io/openchami/tokensmith:pr-13
+EnvironmentFile=/etc/openchami/configs/openchami.env
+
+# Volumes
+Volume=/etc/openchami/tokensmith.json:/tokensmith/config.json:Z
+
+# Networks for the Container to use
+Network=openchami-internal.network
+Network=openchami-jwt-internal.network
+
+# Extra hosts
+PodmanArgs=--add-host='demo.openchami.cluster:172.16.0.254'
+# Proxy settings
+PodmanArgs=--http-proxy=false
+
+[Service]
+Restart=always
+# Run commands after container starts
+ExecStartPost=sleep 10s
