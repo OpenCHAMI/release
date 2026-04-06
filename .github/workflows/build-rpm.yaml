@@ -57,7 +57,6 @@ jobs:
           else
             VERSION=0.0.0
           fi
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Version is ${VERSION}"
 
@@ -69,10 +68,10 @@ jobs:
 
       - name: Create source tarball
         run: |
-          mkdir -p ~/rpmbuild/SOURCES/openchami-${VERSION}
-          cp -r ./* ~/rpmbuild/SOURCES/openchami-${VERSION}/
-          tar -czf ~/rpmbuild/SOURCES/openchami-${VERSION}.tar.gz \
-            -C ~/rpmbuild/SOURCES openchami-${VERSION}
+          mkdir -p ~/rpmbuild/SOURCES/openchami-${{ steps.get_version.outputs.version }}
+          cp -r ./* ~/rpmbuild/SOURCES/openchami-${{ steps.get_version.outputs.version }}/
+          tar -czf ~/rpmbuild/SOURCES/openchami-${{ steps.get_version.outputs.version }}.tar.gz \
+            -C ~/rpmbuild/SOURCES openchami-${{ steps.get_version.outputs.version }}
 
       - name: Sign source tarball
         env:
@@ -87,13 +86,13 @@ jobs:
             --no-tty --pinentry-mode loopback \
             --armor --detach-sign \
             --local-user "${GPG_SIGNING_KEYID}" \
-            --output ~/rpmbuild/SOURCES/openchami-${VERSION}.tar.gz.asc \
-            ~/rpmbuild/SOURCES/openchami-${VERSION}.tar.gz
+            --output ~/rpmbuild/SOURCES/openchami-${{ steps.get_version.outputs.version }}.tar.gz.asc \
+            ~/rpmbuild/SOURCES/openchami-${{ steps.get_version.outputs.version }}.tar.gz
   
       - name: Build RPM package
         run: |
           rpmbuild -ba ~/rpmbuild/SPECS/*.spec \
-            --define "version $VERSION" \
+            --define "version ${{ steps.get_version.outputs.version }}" \
             --define "rel 1"
 
       - name: Sign RPM packages
