@@ -6,13 +6,15 @@ PartOf=openchami.target
 
 [Container]
 ContainerName=metadata-service
-HostName=cloud-init
+HostName=metadata-service
 Image=metadata-service:test
 
-Volume=cloud-init-data:/cloud-init:rw,Z
+Secret=metadata-service-bootstrap-token,type=env,target=TOKENSMITH_BOOTSTRAP_TOKEN
 
 # Environment Variables
 EnvironmentFile=/etc/openchami/configs/openchami.env
+
+Exec=serve --tokensmith-url=http://tokensmith:8080
 
 # Networks for the Container to use
 Network=openchami-internal.network
@@ -21,4 +23,5 @@ Network=openchami-internal.network
 PodmanArgs=--http-proxy=false
 
 [Service]
+ExecStartPre=/usr/local/sbin/tokensmith_bootstrap_token.sh metadata-service
 Restart=always
