@@ -1,0 +1,24 @@
+[Unit]
+Description=The metadata-service container
+Wants=smd.service
+After=smd.service tokensmith.service
+PartOf=openchami.target
+
+[Container]
+ContainerName=metadata-service
+HostName=cloud-init
+Image=metadata-service:test
+
+Volume=cloud-init-data:/cloud-init:rw,Z
+
+# Environment Variables
+EnvironmentFile=/etc/openchami/configs/openchami.env
+
+# Networks for the Container to use
+Network=openchami-internal.network
+
+# Proxy settings
+PodmanArgs=--http-proxy=false
+
+[Service]
+Restart=always

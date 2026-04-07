@@ -1,13 +1,11 @@
 [Unit]
 Description=The tokensmith container
-Wants=hydra-gen-jwks.service
-After=hydra-gen-jwks.service
 PartOf=openchami.target
 
 [Container]
 ContainerName=tokensmith
 HostName=tokensmith
-Image=ghcr.io/openchami/tokensmith:pr-13
+Image=ghcr.io/openchami/tokensmith:pr-19
 EnvironmentFile=/etc/openchami/configs/openchami.env
 
 # Volumes
