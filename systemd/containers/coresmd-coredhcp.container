@@ -1,7 +1,7 @@
 [Unit]
 Description=The CoreSMD CoreDHCP container
-Wants=tokensmith.service
-After=tokensmith.service
+Wants=tokensmith.service smd.service
+After=tokensmith.service smd.service
 PartOf=openchami.target
 
 [Container]
