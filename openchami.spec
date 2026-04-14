@@ -33,6 +33,7 @@ mkdir -p %{buildroot}/etc/openchami/configs \
          %{buildroot}/etc/containers/systemd \
          %{buildroot}/etc/systemd/system \
          %{buildroot}/usr/bin \
+         %{buildroot}/usr/sbin \
          %{buildroot}/etc/profile.d \
          %{buildroot}/usr/libexec/openchami
 
@@ -47,7 +48,7 @@ cp scripts/openchami-certificate-update     %{buildroot}/usr/bin/
 cp scripts/openchami_profile.sh             %{buildroot}/etc/profile.d/openchami.sh
 cp scripts/multi-psql-db.sh                 %{buildroot}/etc/openchami/pg-init/multi-psql-db.sh
 cp scripts/ohpc-nodes.sh                    %{buildroot}/usr/libexec/openchami/
-cp scripts/tokensmith_bootstrap_token    %{buildroot}/usr/sbin/
+cp scripts/tokensmith_bootstrap_token       %{buildroot}/usr/sbin/
 
 chmod +x %{buildroot}/usr/libexec/openchami/bootstrap_openchami.sh
 chmod +x %{buildroot}/usr/libexec/openchami/ohpc-nodes.sh
