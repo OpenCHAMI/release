@@ -1,5 +1,5 @@
 [Unit]
-Description=The bss container
+Description=The boot-service container
 PartOf=openchami.target
 
 # Ensure SMD has started already
