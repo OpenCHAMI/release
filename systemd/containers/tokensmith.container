@@ -9,7 +9,7 @@ Image=ghcr.io/openchami/tokensmith:pr-19
 EnvironmentFile=/etc/openchami/configs/openchami.env
 
 # Volumes
-Volume=/etc/openchami/tokensmith.json:/tokensmith/config.json:Z
+Volume=/etc/openchami/configs/tokensmith.json:/tokensmith/config.json:Z
 
 # Networks for the Container to use
 Network=openchami-internal.network
