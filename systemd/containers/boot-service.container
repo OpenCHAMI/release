@@ -26,5 +26,5 @@ PodmanArgs=--http-proxy=false
 Exec=serve --enable-auth --tokensmith_url=http://tokensmith:8080 --hsm-url=http://smd:27779 --tokensmith-target-service smd
 
 [Service]
-ExecStartPre=/usr/local/sbin/tokensmith_bootstrap_token.sh boot-service
+ExecStartPre=/usr/sbin/tokensmith_bootstrap_token boot-service
 Restart=always
