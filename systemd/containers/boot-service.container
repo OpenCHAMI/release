@@ -1,0 +1,30 @@
+[Unit]
+Description=The bss container
+PartOf=openchami.target
+
+# Ensure SMD has started already
+Wants=smd.service tokensmith.service
+After=smd.service tokensmith.service
+
+[Container]
+ContainerName=boot-service
+HostName=boot-service
+Image=boot-service:test
+
+# Environment Variables
+EnvironmentFile=/etc/openchami/configs/openchami.env
+
+# Secrets
+Secret=boot-service-bootstrap-token,type=env,target=TOKENSMITH_BOOTSTRAP_TOKEN
+
+# Networks for the Container to use
+Network=openchami-internal.network
+
+# Proxy settings
+PodmanArgs=--http-proxy=false
+
+Exec=serve --enable-auth --tokensmith_url=http://tokensmith:8080 --hsm-url=http://smd:27779 --tokensmith-target-service smd
+
+[Service]
+ExecStartPre=/usr/local/sbin/tokensmith_bootstrap_token.sh boot-service
+Restart=always
