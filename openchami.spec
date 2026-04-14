@@ -73,6 +73,7 @@ chmod 644 %{buildroot}/etc/openchami/configs/*
 /etc/profile.d/openchami.sh
 /etc/openchami/pg-init/multi-psql-db.sh
 /usr/bin/openchami-certificate-update
+/usr/sbin/tokensmith_bootstrap_token
 
 %pre
 if [ -f /etc/containers/systemd/coresmd.container ]; then
