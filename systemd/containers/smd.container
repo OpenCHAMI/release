@@ -6,10 +6,6 @@ PartOf=openchami.target
 Requires=smd-init.service
 After=smd-init.service
 
-# Don’t start until JWKS is ready:
-Wants=hydra-gen-jwks.service
-After=hydra-gen-jwks.service
-
 [Container]
 ContainerName=smd
 HostName=smd
