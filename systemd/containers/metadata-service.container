@@ -14,6 +14,9 @@ Secret=metadata-service-bootstrap-token,type=env,target=TOKENSMITH_BOOTSTRAP_TOK
 # Environment Variables
 EnvironmentFile=/etc/openchami/configs/openchami.env
 
+# Secrets
+Secret=metadata-service-bootstrap-token,type=env,target=TOKENSMITH_BOOTSTRAP_TOKEN
+
 Exec=serve --tokensmith-url=http://tokensmith:8080
 
 # Networks for the Container to use
