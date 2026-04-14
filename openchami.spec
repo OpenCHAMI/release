@@ -36,23 +36,25 @@ mkdir -p %{buildroot}/etc/openchami/configs \
          %{buildroot}/etc/profile.d \
          %{buildroot}/usr/libexec/openchami
 
-cp -r systemd/configs/*                 %{buildroot}/etc/openchami/configs/
-cp -r systemd/containers/*              %{buildroot}/etc/containers/systemd/
-cp -r systemd/volumes/*                 %{buildroot}/etc/containers/systemd/
-cp -r systemd/networks/*                %{buildroot}/etc/containers/systemd/
-cp -r systemd/targets/*                 %{buildroot}/etc/systemd/system/
-cp -r systemd/system/*                  %{buildroot}/etc/systemd/system/
-cp scripts/bootstrap_openchami.sh       %{buildroot}/usr/libexec/openchami/
-cp scripts/openchami-certificate-update %{buildroot}/usr/bin/
-cp scripts/openchami_profile.sh         %{buildroot}/etc/profile.d/openchami.sh
-cp scripts/multi-psql-db.sh             %{buildroot}/etc/openchami/pg-init/multi-psql-db.sh
-cp scripts/ohpc-nodes.sh          %{buildroot}/usr/libexec/openchami/
+cp -r systemd/configs/*                     %{buildroot}/etc/openchami/configs/
+cp -r systemd/containers/*                  %{buildroot}/etc/containers/systemd/
+cp -r systemd/volumes/*                     %{buildroot}/etc/containers/systemd/
+cp -r systemd/networks/*                    %{buildroot}/etc/containers/systemd/
+cp -r systemd/targets/*                     %{buildroot}/etc/systemd/system/
+cp -r systemd/system/*                      %{buildroot}/etc/systemd/system/
+cp scripts/bootstrap_openchami.sh           %{buildroot}/usr/libexec/openchami/
+cp scripts/openchami-certificate-update     %{buildroot}/usr/bin/
+cp scripts/openchami_profile.sh             %{buildroot}/etc/profile.d/openchami.sh
+cp scripts/multi-psql-db.sh                 %{buildroot}/etc/openchami/pg-init/multi-psql-db.sh
+cp scripts/ohpc-nodes.sh                    %{buildroot}/usr/libexec/openchami/
+cp scripts/tokensmith_bootstrap_token.sh    %{buildroot}/usr/sbin/
 
 chmod +x %{buildroot}/usr/libexec/openchami/bootstrap_openchami.sh
 chmod +x %{buildroot}/usr/libexec/openchami/ohpc-nodes.sh
 chmod +x %{buildroot}/usr/libexec/openchami/bootstrap_openchami.sh
 chmod +x %{buildroot}/usr/bin/openchami-certificate-update
 chmod +x %{buildroot}/usr/libexec/openchami/ohpc-nodes.sh
+chmod 0700 %{buildroot}/usr/sbin/tokensmith_bootstrap_token.sh
 
 chmod 600 %{buildroot}/etc/openchami/configs/openchami.env
 chmod 644 %{buildroot}/etc/openchami/configs/*
