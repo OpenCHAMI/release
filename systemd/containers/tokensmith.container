@@ -5,7 +5,7 @@ PartOf=openchami.target
 [Container]
 ContainerName=tokensmith
 HostName=tokensmith
-Image=ghcr.io/openchami/tokensmith:pr-19
+Image=ghcr.io/openchami/tokensmith:v0.4.0
 EnvironmentFile=/etc/openchami/configs/openchami.env
 
 # Volumes
