@@ -5,6 +5,7 @@ PartOf=openchami.target
 # Ensure SMD has started already
 Wants=smd.service tokensmith.service
 After=smd.service tokensmith.service
+Requires=tokensmith.service
 
 [Container]
 ContainerName=boot-service
