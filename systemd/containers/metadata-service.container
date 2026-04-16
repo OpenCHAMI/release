@@ -26,5 +26,5 @@ Network=openchami-internal.network
 PodmanArgs=--http-proxy=false
 
 [Service]
-ExecStartPre=/usr/local/sbin/tokensmith_bootstrap_token.sh metadata-service
+ExecStartPre=/usr/sbin/tokensmith_bootstrap_token metadata-service
 Restart=always
