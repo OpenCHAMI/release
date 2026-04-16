@@ -13,7 +13,7 @@ Exec=serve --oidc-issuer="$TOKENSMITH_OIDC_PROVIDER" --issuer="$TOKENSMITH_ISSUE
 
 # Volumes
 Volume=/etc/openchami/configs/tokensmith.json:/etc/tokensmith/config.json:Z
-
+Volume=tokensmith-data:/tokensmith/data:Z,U
 
 # Networks for the Container to use
 Network=openchami-internal.network
