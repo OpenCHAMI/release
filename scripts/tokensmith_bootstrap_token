@@ -5,7 +5,7 @@ SERVICE="hsm"
 
 TOKENSMITH_BOOTSTRAP_TOKEN=$(podman exec -e SERVICE=$SERVICE -e CLIENT=$CLIENT tokensmith /bin/sh -c "\
                         /usr/local/bin/tokensmith bootstrap-token create \
-                        --bootstrap-store /tmp/tokensmith/bootstrap \
+                        --bootstrap-store \${TOKENSMITH_RFC8693_BOOTSTRAP_STORE} \
                         --subject \${CLIENT} \
                         --audience \${SERVICE} \
                         --scopes "read" \
