@@ -7,7 +7,7 @@ PartOf=openchami.target
 [Container]
 ContainerName=metadata-service
 HostName=metadata-service
-Image=metadata-service:test
+Image=ghcr.io/openchami/metadata-service:pr-7
 
 Secret=metadata-service-bootstrap-token,type=env,target=TOKENSMITH_BOOTSTRAP_TOKEN
 
