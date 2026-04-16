@@ -12,7 +12,7 @@ EnvironmentFile=/etc/openchami/configs/openchami.env
 Exec=serve --oidc-issuer="$TOKENSMITH_OIDC_PROVIDER" --issuer="$TOKENSMITH_ISSUER" --port="$TOKENSMITH_PORT" --cluster-id="$TOKENSMITH_CLUSTER_ID" --openchami-id="$TOKENSMITH_OPENCHAMI_ID" --config="$TOKENSMITH_CONFIG" --key-dir="$TOKENSMITH_KEY_DIR" --rfc8693-bootstrap-store="$TOKENSMITH_RFC8693_BOOTSTRAP_STORE" --rfc8693-refresh-store="$TOKENSMITH_RFC8693_REFRESH_STORE" --enable-local-user-mint
 
 # Volumes
-Volume=/etc/openchami/configs/tokensmith.json:/tokensmith/config.json:Z
+Volume=/etc/openchami/configs/tokensmith.json:/etc/tokensmith/config.json:Z
 
 
 # Networks for the Container to use
