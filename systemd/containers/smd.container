@@ -4,7 +4,7 @@ PartOf=openchami.target
 
 # Don’t start until its init has run (and propagate failures):
 Requires=smd-init.service
-After=smd-init.service
+After=smd-init.service tokensmith.service
 
 [Container]
 ContainerName=smd
