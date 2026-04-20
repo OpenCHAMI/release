@@ -1,7 +1,8 @@
 [Unit]
 Description=The metadata-service container
+# Depends on SMD
 Wants=smd.service
-After=smd.service tokensmith.service
+After=smd.service
 PartOf=openchami.target
 
 [Container]
