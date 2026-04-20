@@ -1,5 +1,4 @@
 [Unit]
 Description=Group of OpenCHAMI-related services
-Requires=boot-service.service smd.service tokensmith.service metadata-service.service coresmd-coredhcp.service step-ca.service haproxy.service
-Wants=coresmd-coredns.service
+Wants=coresmd-coredns.service boot-service.service smd.service tokensmith.service metadata-service.service coresmd-coredhcp.service step-ca.service haproxy.service
 After=smd-init.service postgres.service coresmd-coredns.service
