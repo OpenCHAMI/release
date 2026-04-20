@@ -1,8 +1,8 @@
 [Unit]
-Description=The bss container
+Description=The boot-service container
 PartOf=openchami.target
 
-# Ensure SMD has started already
+# Ensure dependent services have started
 Wants=tokensmith.service smd.service
 After=tokensmith.service smd.service
 
