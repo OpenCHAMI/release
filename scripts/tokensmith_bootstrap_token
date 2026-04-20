@@ -3,6 +3,13 @@
 CLIENT="${1}"
 SERVICE="hsm"
 
+if [[ -z "$CLIENT" ]]
+then
+	echo "Empty client"
+	exit 1
+fi
+
+echo "Generating bootstrap token for service client ${CLIENT}"
 TOKENSMITH_BOOTSTRAP_TOKEN=$(podman exec -e SERVICE=$SERVICE -e CLIENT=$CLIENT tokensmith /bin/sh -c "\
                         /usr/local/bin/tokensmith bootstrap-token create \
                         --bootstrap-store \${TOKENSMITH_RFC8693_BOOTSTRAP_STORE} \
@@ -13,5 +20,6 @@ TOKENSMITH_BOOTSTRAP_TOKEN=$(podman exec -e SERVICE=$SERVICE -e CLIENT=$CLIENT t
                         ")
 
 SECRET_NAME="${CLIENT}-bootstrap-token"
-printf '%s' "$TOKENSMITH_BOOTSTRAP_TOKEN" | podman secret rm ${SECRET_NAME} 2>/dev/null || true
+echo "Creating secret ${CLIENT}-bootstrap-token"
+printf '%s' "$TOKENSMITH_BOOTSTRAP_TOKEN" | podman secret rm -i ${SECRET_NAME} 2>/dev/null || true
 printf '%s' "$TOKENSMITH_BOOTSTRAP_TOKEN" | podman secret create ${SECRET_NAME} -
