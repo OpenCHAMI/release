@@ -3,8 +3,8 @@ Description=The boot-service container
 PartOf=openchami.target
 
 # Ensure dependent services have started
-Wants=tokensmith.service smd.service
-After=tokensmith.service smd.service
+Wants=smd.service
+After=smd.service
 
 [Container]
 ContainerName=boot-service
