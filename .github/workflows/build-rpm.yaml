@@ -26,38 +26,42 @@ jobs:
 
     steps:
       - name: Install dependencies
+        shell: bash
         run: |
-          dnf install -y \
-            rpm-build rpm-sign rpmlint gcc make redhat-rpm-config \
-            gh gpg gpg2 gnupg2 expect rpmdevtools createrepo
+          if command -v sudo >/dev/null 2>&1; then
+            SUDO=sudo
+          else
+            SUDO=
+          fi
+
+          $SUDO dnf install -y rpmdevtools gh
 
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Import GPG key
-        run: |
-          echo "$GPG_PRIVATE_KEY" | base64 --decode | gpg --import --batch --yes
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          
-      - name: Show signing subkey expiration
-        shell: bash
-        run: |
-          gpg --list-secret-keys --with-colons \
-          | awk -F: '
-            $1=="ssb" && $12 ~ /s/ {
-              keyid = $5
-              expires = $7
-              if (expires == "" || expires == "0") {
-                edate = "never"
-              } else {
-                cmd = "date -u -d @" expires " +\"%Y-%m-%d %H:%M:%S UTC\""
-                cmd | getline edate
-                close(cmd)
-              }
-              printf "signing subkey %s expires: %s\n", keyid, edate
-             }
-          '   
+      - name: Check repo key expiration
+        uses: OpenCHAMI/gpg-signing-manager/actions/check-key-expiration@main
+        with:
+          key-armored-b64: ${{ secrets.GPG_REPO_KEY_B64 }}
+          warn-days:       '30'
+
+      - name: Generate ephemeral release key
+        id: ephemeral
+        uses: OpenCHAMI/gpg-signing-manager/actions/gpg-ephemeral-key@main
+        with:
+          cert-key-armored-b64: ${{ secrets.GPG_REPO_CERT_KEY_B64 }}
+          name:    '${{ github.repository }} Release'
+          comment: 'Ephemeral key for ${{ github.ref_name }}'
+          email:   'release@packages.openchami.org'
+          expire:  '1d'
+
+      - name: Setup RPM signing (ephemeral key)
+        id: rpm_signing
+        uses: OpenCHAMI/gpg-signing-manager/actions/setup-rpm-signing@main
+        with:
+          repo-key-armored-b64:  ${{ secrets.GPG_REPO_KEY_B64 }}
+          ephemeral-fingerprint: ${{ steps.ephemeral.outputs.ephemeral-fingerprint }}
+          public-key-output:     public_gpg_key.asc 
 
       - name: Get version
         id: get_version
@@ -69,7 +73,7 @@ jobs:
           else
             VERSION=0.0.0
           fi
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Version is ${VERSION}"
 
       - name: Setup RPM build environment
@@ -80,114 +84,169 @@ jobs:
 
       - name: Create source tarball
         run: |
-          mkdir -p ~/rpmbuild/SOURCES/openchami-${{ env.VERSION }}
-          cp -r ./* ~/rpmbuild/SOURCES/openchami-${{ env.VERSION }}/
-          tar -czf ~/rpmbuild/SOURCES/openchami-${{ env.VERSION }}.tar.gz \
-            -C ~/rpmbuild/SOURCES openchami-${{ env.VERSION }} \
-            --transform "s|openchami-${{ env.VERSION }}-${{ env.COMMIT_SHA }}|openchami-${{ env.VERSION }}|"
+          mkdir -p ~/rpmbuild/SOURCES/openchami-${{ steps.get_version.outputs.version }}
+          cp -r ./* ~/rpmbuild/SOURCES/openchami-${{ steps.get_version.outputs.version }}/
+          tar -czf ~/rpmbuild/SOURCES/openchami-${{ steps.get_version.outputs.version }}.tar.gz \
+            -C ~/rpmbuild/SOURCES openchami-${{ steps.get_version.outputs.version }}
 
       - name: Sign source tarball
-        run: |
-          echo "$GPG_PASSPHRASE" | gpg --batch --yes --passphrase-fd 0 --pinentry-mode loopback \
-            --armor --detach-sign \
-            --local-user admin@openchami.org \
-            --output ~/rpmbuild/SOURCES/openchami-${{ env.VERSION }}.tar.gz.asc \
-            ~/rpmbuild/SOURCES/openchami-${{ env.VERSION }}.tar.gz
         env:
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GPG_SIGNING_FINGERPRINT: ${{ steps.ephemeral.outputs.ephemeral-fingerprint }}
+        run: |
+          set -euo pipefail
+          unset GPG_TTY
+          echo "Signing source tarball with key: ${GPG_SIGNING_FINGERPRINT}"
+          gpg --batch --list-secret-keys --keyid-format LONG "${GPG_SIGNING_FINGERPRINT}"
+          gpg --batch --yes \
+            --no-tty --pinentry-mode loopback \
+            --status-fd 2 \
+            --armor --detach-sign \
+            --local-user "${GPG_SIGNING_FINGERPRINT}" \
+            --output ~/rpmbuild/SOURCES/openchami-${{ steps.get_version.outputs.version }}.tar.gz.asc \
+            ~/rpmbuild/SOURCES/openchami-${{ steps.get_version.outputs.version }}.tar.gz
   
       - name: Build RPM package
         run: |
           rpmbuild -ba ~/rpmbuild/SPECS/*.spec \
-            --define "version ${{ env.VERSION }}" \
+            --define "version ${{ steps.get_version.outputs.version }}" \
             --define "rel 1"
 
       - name: Sign RPM packages
-        run: |
-          for rpm in $(find ~/rpmbuild/RPMS/ -type f -name "*.rpm"); do
-            echo "$GPG_PASSPHRASE" | gpg --batch --yes --passphrase-fd 0 --pinentry-mode loopback \
-              --detach-sign --armor "$rpm"
-            rpm --define "_gpg_name admin@openchami.org" --addsign "$rpm"
-          done
+        shell: bash
         env:
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GPG_SIGNING_FINGERPRINT: ${{ steps.ephemeral.outputs.ephemeral-fingerprint }}
+        run: |
+          set -euo pipefail
+          unset GPG_TTY
+          echo "Using RPM signing key: ${GPG_SIGNING_FINGERPRINT}"
+          gpg --batch --list-secret-keys --keyid-format LONG "${GPG_SIGNING_FINGERPRINT}"
+          sed -i '/^%__gpg_sign_cmd/d' ~/.rpmmacros
+          echo 'Configured ~/.rpmmacros:'
+          cat ~/.rpmmacros
+
+          found=0
+          while IFS= read -r -d '' rpm_file; do
+            found=1
+            echo "Signing RPM: $rpm_file"
+            rpmsign --key-id "${GPG_SIGNING_FINGERPRINT}" --addsign "$rpm_file"
+          done < <(find ~/rpmbuild/RPMS/ -type f -name "*.rpm" -print0)
+
+          if [ "$found" -eq 0 ]; then
+            echo 'No RPM packages were produced to sign' >&2
+            exit 1
+          fi
+
+      - name: Verify RPM signatures
+        shell: bash
+        env:
+          GPG_SIGNING_FINGERPRINT: ${{ steps.ephemeral.outputs.ephemeral-fingerprint }}
+        run: |
+          rpm --import <(gpg --export --armor "${GPG_SIGNING_FINGERPRINT}")
+          found=0
+          while IFS= read -r -d '' rpm_file; do
+            found=1
+            output=$(rpm --checksig -v "$rpm_file" 2>&1)
+            printf '%s\n' "$output"
+
+            if printf '%s\n' "$output" | grep -q 'SIGNATURES NOT OK'; then
+              echo "RPM signature verification failed for $rpm_file" >&2
+              exit 1
+            fi
+
+            if ! printf '%s\n' "$output" | grep -Eiq 'Key ID|RSA/SHA|RSA/sha|EdDSA|pgp'; then
+              echo "RPM appears unsigned: $rpm_file" >&2
+              exit 1
+            fi
+          done < <(find ~/rpmbuild/RPMS/ -type f -name "*.rpm" -print0)
+
+          if [ "$found" -eq 0 ]; then
+            echo 'No RPM packages were produced to verify' >&2
+            exit 1
+          fi
+
+      - name: Export ephemeral public key
+        run: |
+          printf '%s' '${{ steps.ephemeral.outputs.ephemeral-public-key }}' \
+            | base64 -d > repo-ephemeral-public.asc
+
+      - name: Export repo public key
+        run: |
+          gpg --export --armor '${{ steps.ephemeral.outputs.repo-cert-keyid }}' > repo-public.asc
 
       - name: Find RPM file
-        if: env.VERSION != '0.0.0'
+        if: steps.get_version.outputs.version != '0.0.0'
         id: find_rpm
         run: |
           rpm_file=$(ls ~/rpmbuild/RPMS/noarch/*.rpm)
           echo "rpm_file=${rpm_file}" >> $GITHUB_ENV
-          echo "::set-output name=path::${rpm_file}"
+          echo "path=${rpm_file}" >> "$GITHUB_OUTPUT"
 
       - name: Compute RPM Checksum
-        if: env.VERSION != '0.0.0'
+        if: steps.get_version.outputs.version != '0.0.0'
         id: compute_checksum
         run: |
           rpm_file=$(ls ~/rpmbuild/RPMS/noarch/*.rpm)
           checksum=$(sha256sum "$rpm_file" | awk '{print $1}')
           echo "checksum=${checksum}" >> $GITHUB_ENV
-          echo "::set-output name=checksum::${checksum}"
-      
-      - name: Export Public GPG Key
-        if: env.VERSION != '0.0.0'
-        run: |
-          gpg --armor --export admin@openchami.org > public_gpg_key.asc
-
-      - name: Get Public GPG Key Content
-        if: env.VERSION != '0.0.0'
-        id: get_pubkey
-        run: |
-          key=$(cat public_gpg_key.asc)
-          escaped_key=$(echo "$key" | sed ':a;N;$!ba;s/\n/\\n/g')
-          echo "::set-output name=pubkey::${escaped_key}"
+          echo "checksum=${checksum}" >> "$GITHUB_OUTPUT"
 
       - name: Genereate release notes
-        if: env.VERSION != '0.0.0'
+        if: steps.get_version.outputs.version != '0.0.0'
         id: gen_rel_notes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           {
-            echo '# OpenCHAMI v${{ env.VERSION }}'
+            echo '# OpenCHAMI v${{ steps.get_version.outputs.version }}'
             echo ''
             echo '**RPM SHA256 Checksum:**'
             echo '`${{ steps.compute_checksum.outputs.checksum }}`'
             echo ''
-            gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" -F tag_name='v${{ env.VERSION }}' --jq .body
+            gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" -F tag_name='v${{ steps.get_version.outputs.version }}' --jq .body
           } > CHANGELOG.md
 
       - name: Create GitHub Release
-        if: env.VERSION != '0.0.0'
+        if: steps.get_version.outputs.version != '0.0.0'
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ env.VERSION }}
-          release_name: v${{ env.VERSION }}
+          tag_name: v${{ steps.get_version.outputs.version }}
+          release_name: v${{ steps.get_version.outputs.version }}
           draft: false
           prerelease: false
           body_path: CHANGELOG.md
 
       - name: Upload RPM to GitHub Release
-        if: env.VERSION != '0.0.0'
+        if: steps.get_version.outputs.version != '0.0.0'
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ${{ steps.find_rpm.outputs.path }}
-          asset_name: openchami-${{ env.VERSION }}.rpm
+          asset_name: openchami-${{ steps.get_version.outputs.version }}.rpm
           asset_content_type: application/x-rpm
 
-      - name: Upload Public GPG Key to GitHub Release
-        if: env.VERSION != '0.0.0'
+      - name: Upload Repo GPG Key to GitHub Release
+        if: steps.get_version.outputs.version != '0.0.0'
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: public_gpg_key.asc
-          asset_name: public_gpg_key.asc
+          asset_path: repo-public.asc
+          asset_name: repo_public.asc
+          asset_content_type: text/plain
+
+      - name: Upload Repo Ephemeral GPG Key to GitHub Release
+        if: steps.get_version.outputs.version != '0.0.0'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: repo-ephemeral-public.asc
+          asset_name: repo_ephemeral_public.asc
           asset_content_type: text/plain
