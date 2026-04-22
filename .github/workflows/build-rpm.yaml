@@ -25,7 +25,7 @@ jobs:
       RELEASE_TAG: ${{ github.event.inputs.release_tag }}
 
     steps:
-      - name: Install rpmdevtools
+      - name: Install dependencies
         shell: bash
         run: |
           if command -v sudo >/dev/null 2>&1; then
@@ -34,7 +34,7 @@ jobs:
             SUDO=
           fi
 
-          $SUDO dnf install -y rpmdevtools
+          $SUDO dnf install -y rpmdevtools gh
 
       - name: Checkout repository
         uses: actions/checkout@v4
