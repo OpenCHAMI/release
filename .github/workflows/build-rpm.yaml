@@ -169,6 +169,10 @@ jobs:
           printf '%s' '${{ steps.ephemeral.outputs.ephemeral-public-key }}' \
             | base64 -d > ephemeral-public.asc
 
+      - name: Export repo public key
+        run: |
+          echo '${{ secrets.GPG_REPO_CERT_B64 }}' | base64 -d > repo-public.asc
+
       - name: Find RPM file
         if: steps.get_version.outputs.version != '0.0.0'
         id: find_rpm
