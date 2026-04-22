@@ -25,27 +25,32 @@ jobs:
       RELEASE_TAG: ${{ github.event.inputs.release_tag }}
 
     steps:
-      - name: Install dependencies
-        run: |
-          dnf install -y \
-            rpm-build rpm-sign rpmlint gcc make redhat-rpm-config \
-            gh gpg gpg2 gnupg2 expect rpmdevtools createrepo
-
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check signing subkey expiration
-        uses: OpenCHAMI/gpg-signing-manager/actions/check-subkey-expiration@main
+      - name: Check repo key expiration
+        uses: OpenCHAMI/gpg-signing-manager/actions/check-key-expiration@main
         with:
-          subkey-armored-b64: ${{ secrets.GPG_SUBKEY_B64 }}
-          warn-days: '30'
+          key-armored-b64: ${{ secrets.GPG_REPO_KEY_B64 }}
+          warn-days:       '30'
 
-      - name: Setup RPM signing
-        id: repo_key
+      - name: Generate ephemeral release key
+        id: ephemeral
+        uses: OpenCHAMI/gpg-signing-manager/actions/gpg-ephemeral-key@main
+        with:
+          cert-key-armored-b64: ${{ secrets.GPG_REPO_CERT_KEY_B64 }}
+          name:    '${{ github.repository }} Release'
+          comment: 'Ephemeral key for ${{ github.ref_name }}'
+          email:   'release@packages.openchami.org'
+          expire:  '1d'
+
+      - name: Setup RPM signing (ephemeral key)
+        id: rpm_signing
         uses: OpenCHAMI/gpg-signing-manager/actions/setup-rpm-signing@main
         with:
-          subkey-armored-b64: ${{ secrets.GPG_SUBKEY_B64 }}
-          public-key-output: public_gpg_key.asc 
+          repo-key-armored-b64:  ${{ secrets.GPG_REPO_KEY_B64 }}
+          ephemeral-fingerprint: ${{ steps.ephemeral.outputs.ephemeral-fingerprint }}
+          public-key-output:     public_gpg_key.asc 
 
       - name: Get version
         id: get_version
@@ -75,8 +80,8 @@ jobs:
 
       - name: Sign source tarball
         env:
-          GPG_SIGNING_KEYID: ${{ steps.repo_key.outputs.repo-signing-keyid }}
-          GPG_SIGNING_FINGERPRINT: ${{ steps.repo_key.outputs.repo-signing-fingerprint }}
+          GPG_SIGNING_KEYID: ${{ steps.ephemeral.outputs.ephemeral-keyid }}
+          GPG_SIGNING_FINGERPRINT: ${{ steps.ephemeral.outputs.ephemeral-fingerprint }}
         run: |
           set -euo pipefail
           unset GPG_TTY
@@ -99,8 +104,8 @@ jobs:
       - name: Sign RPM packages
         shell: bash
         env:
-          GPG_SIGNING_KEYID: ${{ steps.repo_key.outputs.repo-signing-keyid }}
-          GPG_SIGNING_FINGERPRINT: ${{ steps.repo_key.outputs.repo-signing-fingerprint }}
+          GPG_SIGNING_KEYID: ${{ steps.ephemeral.outputs.ephemeral-keyid }}
+          GPG_SIGNING_FINGERPRINT: ${{ steps.ephemeral.outputs.ephemeral-fingerprint }}
         run: |
           set -euo pipefail
           unset GPG_TTY
@@ -145,6 +150,11 @@ jobs:
             echo 'No RPM packages were produced to verify' >&2
             exit 1
           fi
+
+      - name: Export ephemeral public key
+        run: |
+          printf '%s' '${{ steps.ephemeral.outputs.ephemeral-public-key }}' \
+            | base64 -d > ephemeral-public.asc
 
       - name: Find RPM file
         if: steps.get_version.outputs.version != '0.0.0'
@@ -202,13 +212,24 @@ jobs:
           asset_name: openchami-${{ steps.get_version.outputs.version }}.rpm
           asset_content_type: application/x-rpm
 
-      - name: Upload Public GPG Key to GitHub Release
+      - name: Upload Repo GPG Key to GitHub Release
         if: steps.get_version.outputs.version != '0.0.0'
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: public_gpg_key.asc
-          asset_name: public_gpg_key.asc
+          asset_path: repo-public.asc
+          asset_name: repo_public.asc
+          asset_content_type: text/plain
+
+      - name: Upload Repo Ephemeral GPG Key to GitHub Release
+        if: steps.get_version.outputs.version != '0.0.0'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ephemeral-public.asc
+          asset_name: repo_ephemeral_public.asc
           asset_content_type: text/plain
