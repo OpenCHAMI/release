@@ -80,18 +80,17 @@ jobs:
 
       - name: Sign source tarball
         env:
-          GPG_SIGNING_KEYID: ${{ steps.ephemeral.outputs.ephemeral-keyid }}
           GPG_SIGNING_FINGERPRINT: ${{ steps.ephemeral.outputs.ephemeral-fingerprint }}
         run: |
           set -euo pipefail
           unset GPG_TTY
-          echo "Signing source tarball with key: ${GPG_SIGNING_KEYID} (${GPG_SIGNING_FINGERPRINT})"
+          echo "Signing source tarball with key: ${GPG_SIGNING_FINGERPRINT}"
           gpg --batch --list-secret-keys --keyid-format LONG "${GPG_SIGNING_FINGERPRINT}"
           gpg --batch --yes \
             --no-tty --pinentry-mode loopback \
             --status-fd 2 \
             --armor --detach-sign \
-            --local-user "${GPG_SIGNING_KEYID}" \
+            --local-user "${GPG_SIGNING_FINGERPRINT}" \
             --output ~/rpmbuild/SOURCES/openchami-${{ steps.get_version.outputs.version }}.tar.gz.asc \
             ~/rpmbuild/SOURCES/openchami-${{ steps.get_version.outputs.version }}.tar.gz
   
@@ -104,13 +103,13 @@ jobs:
       - name: Sign RPM packages
         shell: bash
         env:
-          GPG_SIGNING_KEYID: ${{ steps.ephemeral.outputs.ephemeral-keyid }}
           GPG_SIGNING_FINGERPRINT: ${{ steps.ephemeral.outputs.ephemeral-fingerprint }}
         run: |
           set -euo pipefail
           unset GPG_TTY
-          echo "Using RPM signing key: ${GPG_SIGNING_KEYID} (${GPG_SIGNING_FINGERPRINT})"
+          echo "Using RPM signing key: ${GPG_SIGNING_FINGERPRINT}"
           gpg --batch --list-secret-keys --keyid-format LONG "${GPG_SIGNING_FINGERPRINT}"
+          sed -i '/^%__gpg_sign_cmd/d' ~/.rpmmacros
           echo 'Configured ~/.rpmmacros:'
           cat ~/.rpmmacros
 
@@ -118,7 +117,7 @@ jobs:
           while IFS= read -r -d '' rpm_file; do
             found=1
             echo "Signing RPM: $rpm_file"
-            rpmsign --key-id "${GPG_SIGNING_KEYID}" --addsign "$rpm_file"
+            rpmsign --key-id "${GPG_SIGNING_FINGERPRINT}" --addsign "$rpm_file"
           done < <(find ~/rpmbuild/RPMS/ -type f -name "*.rpm" -print0)
 
           if [ "$found" -eq 0 ]; then
