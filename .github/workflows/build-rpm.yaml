@@ -167,11 +167,11 @@ jobs:
       - name: Export ephemeral public key
         run: |
           printf '%s' '${{ steps.ephemeral.outputs.ephemeral-public-key }}' \
-            | base64 -d > ephemeral-public.asc
+            | base64 -d > repo-ephemeral-public.asc
 
       - name: Export repo public key
         run: |
-          echo '${{ secrets.GPG_REPO_CERT_B64 }}' | base64 -d > repo-public.asc
+          gpg --export --armor '${{ steps.ephemeral.outputs.repo-cert-keyid }}' > repo-public.asc
 
       - name: Find RPM file
         if: steps.get_version.outputs.version != '0.0.0'
@@ -247,6 +247,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ephemeral-public.asc
+          asset_path: repo-ephemeral-public.asc
           asset_name: repo_ephemeral_public.asc
           asset_content_type: text/plain
