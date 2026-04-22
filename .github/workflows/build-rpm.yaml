@@ -138,7 +138,10 @@ jobs:
 
       - name: Verify RPM signatures
         shell: bash
+        env:
+          GPG_SIGNING_FINGERPRINT: ${{ steps.ephemeral.outputs.ephemeral-fingerprint }}
         run: |
+          rpm --import <(gpg --export --armor "${GPG_SIGNING_FINGERPRINT}")
           found=0
           while IFS= read -r -d '' rpm_file; do
             found=1
