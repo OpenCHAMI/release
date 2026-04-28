@@ -1,0 +1,106 @@
+# SPDX-FileCopyrightText: (C) Copyright 2026 OpenCHAMI a Series of LF Projects, LLC
+# SPDX-License-Identifier: MIT
+[project]
+name = 'install_openchami'
+authors = [
+    { name = 'Eric Lund', email = 'eric.lund@hpe.com' },
+]
+classifiers = [
+    'License :: OSI Approved :: MIT License',
+    'Natural Language :: English',
+    'Operating System :: POSIX',
+    'Programming Language :: Python :: 3 :: Only',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+]
+description = '2025 Tutorial Based Installer for OpenCHAMI Release content'
+dependencies = [
+    # yaml - this comment reduces conflicts in dependabot PRs
+    'pyyaml~=6.0',
+    # passlib for composing and hashing user passwords
+    'passlib~=1.7',
+    # setuptools < 80 is required to provide pkg_resources
+    # for passlib and to avoid the pkg_resources deprecation
+    # warning
+    'setuptools<80',
+    # vtds-base for a few template and config operations
+    'vtds-base~=0.0'
+]
+
+dynamic = ['version']
+maintainers = [
+    { name = 'Eric Lund', email = 'eric.lund@hpe.com' },
+]
+readme = { file = 'README.md', content-type = 'text/markdown' }
+requires-python = '>=3.9'
+
+[metadata]
+url = 'https://github.com/erl-hpe/install-openchami'
+
+license = "MIT"
+# Note: the LICENSE file here is populated by the RPM installer that
+#       typically runs the installation by copying the LICENSE file
+#       from the root of this project's tree into the installation
+#       tree for this python package. If you are trying to install
+#       this python package manually, copy '../LICENSE' into this
+#       directory before running the install.
+license-files = ["LICENSE"]
+
+[project.optional-dependencies]
+build = [
+    'build>=1.2.2,<1.5.0'
+]
+ci = [
+    'nox>=2024.10.9,<2026.3.0',
+]
+docs = [
+]
+style = [
+    'pycodestyle~=2.11',
+]
+lint = [
+    'pylint~=3.2',
+]
+test = [
+    # pytest - this comment reduces conflicts in dependabot PRs
+    'pytest>=8.3.3,<8.5.0',
+    # pytest coverage - this comment reduces conflicts in dependabot PRs
+    'pytest-cov>=4.1,<8.0',
+    # coverage - this comment reduces conflicts in dependabot PRs
+    'coverage~=7.4',
+]
+
+[project.scripts]
+install_openchami = "install_openchami.install_openchami:entry"
+
+# Defines which folders belong to our package.
+[tool.setuptools.packages.find]
+include = ['install_openchami*']
+exclude = []
+
+[tool.setuptools.package-data]
+install_openchami = [
+    "templates/*",
+    "config/*",
+]
+
+[tool.setuptools.dynamic]
+
+# Allows for dynamic versioning via git-tag.
+[tool.setuptools_scm]
+
+[build-system]
+build-backend = 'setuptools.build_meta'
+requires = [
+    # setuptools - this comment reduces conflicts in dependabot PRs
+    'setuptools >= 66,< 83',
+    # setuptools scm - this comment reduces conflicts in dependabot PRs
+    'setuptools_scm[toml] >= 7.1,< 9.3',
+    # wheel - this comment reduces conflicts in dependabot PRs
+    'wheel >= 0.45.1,< 0.47.0',
+]
+
+[tool.distutils.bdist_wheel]
+universal = false # This app. is not compatible with Python2.

@@ -1,0 +1,421 @@
+# The deployment mode can be 'host' or 'cluster'. If the mode is
+# 'cluster' the presumption is that there is hardware (or virtual
+# hardware) out on the cluster network and BMCs or virtual BMCs managing
+# that hardware, and OpenCHAMI is there to boot and manage the
+# cluster. If the mode is 'host' then we are deploying OpenCHAMI on a
+# node or VM where we want to spin up one or more Virtual Machines
+# across a node local Virtual Network on the same node where OpenCHAMI
+# is running and let them boot from OpenCHAMI. The default is 'host' to
+# allow easy testing of OpenCHAMI on a single VM.
+deployment_mode: host
+
+# The manifest section contains information about the files to be
+# generated in preparation for installing OpenCHAMI. Most files will be
+# predefined and found in the 'templates' sub-directory of the
+# 'install_openchami' module. Some files are generated directly from
+# config. Two files are installation scripts. One installs OpenCHAMI and
+# one prepares the management host for installing OpenCHAMI. These are
+# identified by the 'install-entrypoint' and 'host-prep-entrypoint'
+# annotations respectively. There must be exectly one file with each
+# annotation in the config. Other annotations are used by the file
+# templates to identify target files for a given action. For example,
+# all image builders have the 'image-builder' annotation.
+manifest:
+  # 'deployment_user' identifies the username of the user on the host
+  # who will be running the deployment. By default this is 'rocky'. This
+  # user must already exist on the host where installation is run and
+  # must be set up for passwordless 'sudo' access. All rendered files
+  # generated from this manifest will be owned by this user and its
+  # primary group unless otherwise specified in the manifest entry for
+  # the file. 
+  #
+  # The primary group ID and user ID will be filled in in this section
+  # by the installer as 'deployment_user.uid' and 'deployment_user.gid'
+  # based on information queried from the host and can be used in file
+  # templates as needed
+  deployment_user:
+    username: rocky
+    primary_group: rocky     # used for host preparation
+    supplementary_groups: [] # user for host preparation
+    uid: null  # This will always be filled in by the installer
+    gid: null  # This will always be filled in by the installer
+  # The deployment directory is where deployment operations are run
+  # from. All files that have a 'target' specification that is a
+  # relative pathname are located below the deployment directory.
+  deployment_directory: "/opt/workdir"
+  # 'files' contains the information about each file to be
+  # deployed. If a file has a 'template_name' the template is picked up
+  # from that named file among the templates delivered with the
+  # 'install_openchami' module and rendered to the 'target' location on
+  # the host. If not the file is generated somehow, and the details are
+  # in the description. If 'mkdir' is present and 'true' then the parent
+  # directory path will be created as needed with and each created
+  # element will be given 0755 permissions and ownership matching the
+  # file. If 'mkdir' is not present or 'false', the directory must
+  # already exist.
+  files:
+    rocky-base-image:
+      annotations:
+        - image-builder
+      template_name: null  # generated from config
+      target: images/rocky-base-9.yaml  # relative to 'deployment_directory'
+      # This template is generated from config and then rendered after
+      # generation. The 'generation' section describes how that is done,
+      # identifying the path in this config from which the template data
+      # are obtained to be written ('config_path') in dotted notation, and
+      # a file type (YAML or JSON) to be generated.
+      generation:
+        config_path: images.builders.rocky-base-9.data
+        type: yaml    # 'yaml' or 'json'
+      mode: "644"
+      mkdir: true
+    compute-base-image:
+      annotations:
+        - image-builder
+      template_name: null  # generated from config
+      target: images/compute-base-rocky9.yaml
+      generation:
+        config_path: images.builders.compute-base-rocky9.data
+        type: yaml    # 'yaml' or 'json'
+      mode: "644"
+      mkdir: true
+    compute-debug-image:
+      annotations:
+        - image-builder
+      template_name: null  # generated from config
+      target: images/compute-debug-9.yaml
+      generation:
+        config_path: images.builders.compute-debug-rocky9.data
+        type: yaml    # 'yaml' or 'json'
+      mode: "644"
+      mkdir: true
+    bmc_info:
+      # This template is delivered with the install_openchami module and
+      # gets installed into a system directory with mode "rw-------"
+      # and root ownership because it contains some potentially
+      # sensitive data.
+      template_name: bmc_info.json
+      target: /etc/vtds/bmc_info.json
+      mode: "600"
+      owner: root
+      group: root
+      mkdir: true
+    build-image-script:
+      template_name: build-image.sh
+      target: /etc/profile.d/build-image.sh
+      mode: "644"
+    containers-conf:
+      # XXX - is this really used anywhere?
+      template_name: containers.conf
+      target: containers.conf
+      mode: "644"
+      mkdir: true
+    coredhcp:
+      annotations:
+        - host-prep-support
+      template_name: coredhcp.yaml
+      target: /etc/openchami/configs/coredhcp.yaml
+      mode: "644"
+      owner: root
+      group: root
+      mkdir: false
+    Corefile:
+      template_name: Corefile
+      target: /etc/openchami/configs/Corefile
+      owner: root
+      group: root
+      mode: "644"
+      mkdir: false
+    minio-container:
+      template_name: minio.container
+      target: /etc/containers/systemd/minio.container
+      mode: "644"
+      owner: root
+      group: root
+      mkdir: false
+    registry-container:
+      template_name: registry.container
+      target: /etc/containers/systemd/registry.container
+      mode: "644"
+      owner: root
+      group: root
+      mkdir: false
+    nodes:
+      template_name: nodes.yaml
+      target: nodes/nodes.yaml
+      mode: "644"
+      mkdir: true
+    openchami-net:
+      template_name: openchami-net.xml
+      target: openchami-net.xml
+      mode: "644"
+      mkdir: true
+    openchami-install:
+      annotations:
+        - install-entrypoint
+      template_name: OpenCHAMI-Install.sh
+      target: OpenCHAMI-Install.sh
+      mode: "755"
+      mkdir: true
+    prep-setup:
+      annotations:
+        - host-prep-support
+      template_name: prep_setup.sh
+      target: prep_setup.sh
+      owner: root
+      group: root
+      mode: "644"  # not a script: a sourced file, not stand-alone executable
+      mkdir: true
+    prepare-host:
+      annotations:
+        - host-prep-entrypoint
+      template_name: prepare_host.sh
+      target: prepare_host.sh
+      owner: root
+      group: root
+      mode: "755"
+      mkdir: true
+    s3-public-read-boot-images:
+      annotation:
+        - s3-access-control
+      template_name: s3-public-read-boot-images.json
+      target: s3-public-read-boot-images.json
+      mode: "644"
+      mkdir: true
+    s3-public-read-efi:
+      annotation:
+        - s3-access-control
+      template_name: s3-public-read-efi.json
+      target: s3-public-read-efi.json
+      mode: "644"
+      mkdir: true
+    s3cfg:
+      # This will be copied into the deployment user's home directory as
+      # '.s3cfg'. For now, put it in the deployment directory so we have
+      # it.
+      template_name: s3cfg
+      target: s3cfg
+      mode: "644"
+      mkdir: true
+
+# The following provides BMC information. For simple stand-alone
+# installs, there are no "real" BMCs (unless your system has them and
+# you want them configured). Real systems and vTDS deployed systems do
+# have "real" BMCs and they should be configured here.
+#
+# Even for simple standalone installs, though, we do need to have some
+# basic BMC information in order to be able  to compose the static
+# discovery information, so we have a BMC defined here, which also
+# serves as an example.
+bmcs:
+  x2000c0s0b0:
+    blade_class: host-blade
+    blade_instance: 0
+    network:
+      redfish_username: root
+      redfish_password: null  # Generated
+      mac: null  # Generated if null, otherwise put the real MAC here
+      # this is a stand-in, put the real IP here if you have one
+      ipv4: 127.0.0.1
+
+# The hosting configuration is here. This identifies the cluster
+# network from the management node (where OpenCHAMI runs) and sets up
+# the DNS and DHCP information needed to set up the network related
+# microservices. 
+hosting_config:
+  # this is the network name not the interface name. It is used to
+  # create virtual networks in 'virsh' for 'host' mode operation.
+  cluster_name: demo
+  cluster_net_name: openchami-net
+  cluster_net_bridge_name: virbr-openchami
+  cluster_net_dhcp_start: 172.16.0.1
+  cluster_net_dhcp_end: 172.16.0.128
+  cluster_net_mask: 255.255.255.0
+  net_head_dns_server: 172.16.0.254
+  net_head_domain: openchami.cluster
+  net_head_hostname: management
+  net_head_ip: 172.16.0.254
+  # Extra Packages lists extra packages in addition to the ones
+  # strictly needed for OpenCHAMI deployment that the 'prep-host'
+  # operation should install on the host node. The 'pre' list is
+  # packages that are required before installing the main list. This is
+  # not about dependencies per-se but about installing packages that
+  # bring repos with them like 'epel-release'. The 'main' list is the
+  # list of packages to be installed after the 'pre' list has been
+  # installed.
+  extra_packages:
+    pre: []
+    main: []
+
+# The 'nodes' section provides information about the managed nodes to be
+# created / managed by OpenCHAMI. It is used in the 'host' deployment
+# mode to help configure the VMs that are created locally as managed
+# (compute) nodes and set up static discovery data (nodes.yaml) to feed
+# to OpenCHAMI. It is used in the 'cluster' deployment mode only to set
+# up static discovery data.
+nodes:
+  - name: x2000c0s0b0n0
+    bmc_name: x2000c0s0b0
+    cluster_net_interface: openchami-net
+    hostname: compute-001
+    nid: 1
+    node_group: compute
+    interfaces:
+      - network_name: openchami-net
+        mac_addr: 52:54:00:62:65:ad
+        ip_addrs:
+        - name: openchami-net
+          ip_addr: 172.16.0.1
+
+# The 'images' section contains information that drives the building
+# and assignment of boot images used on managed (for example
+# 'compute') nodes. The major pieces are:
+#
+#  - a 'build_order' which is a list of the names image builders to
+#    be run in their dependency order
+#
+#  - a collection of image builders ('builders') indexed by image
+#    builder name (same as is found in the 'build_order' list) which
+#    contain the full yaml code in free form used to generate the
+#    templated image builder YAML file for the OpenCHAMI deployment.
+#
+#  - a list of 'deployment_targets' which identify which image will be
+#    used on which 'node_group' (see 'nodes' above).
+#
+#  - a list of groups to be pre-provisioned on specified images
+#
+#  - a list of users to be pre-provisioned on specified images
+#
+# Each piece is described more fully in-line below.
+images:
+  # The 'build_order' list specifies the order in which images need to
+  # be built to handle dependencies in layered builds. All images that
+  # are not listed in the build order will be assumed to only have
+  # dependencies on those listed and will be built in an arbitrary
+  # order following completion of the specified ordered builds.
+  build_order:
+    - rocky-base-9
+    - compute-base-rocky9
+  # The 'deployment_targets' section associates images with managed node
+  # groups (see 'nodes' above). It is indexed by group and each element
+  # identifies the boot parameter file associated with the boot image
+  # image assigned to the specified group. By default there is one node
+  # group ('compute') and it boots the 'compute-base-rocky-9' image
+  # described in 'builders'.
+  deployment_targets:
+    compute: compute-base-rocky9
+  # The 'builders' section is a bit different from other configuration
+  # because each element is used directly to generate a Jinja2
+  # template for an image builder and then that template is run
+  # through the standard templated file generation before it is used
+  # for deployment. That means that Jinja2 templating can be included
+  # in the configuration (see, for example, the 'publish_registry'
+  # fields of each of the builders) and it will be honored.
+  builders:
+    rocky-base-9:
+      metadata:
+        boot_param_filename: rocky-base-9.yaml
+      data:
+        options:
+          layer_type: 'base'
+          name: 'rocky-base'
+          publish_tags: '9'
+          pkg_manager: 'dnf'
+          parent: 'scratch'
+          # NOTE: the publish_registry setting here may be used by other
+          #       image builders as their 'parent' URL. Make sure if you
+          #       change this you change those items as well.
+          publish_registry: '{{ hosting_config.net_head_hostname }}.{{ hosting_config.net_head_domain }}:5000/{{ hosting_config.cluster_name }}'
+          registry_opts_push:
+            - '--tls-verify=false'
+        repos:
+          - alias: 'Rocky_9_BaseOS'
+            url: 'https://dl.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/'
+            gpg: 'https://dl.rockylinux.org/pub/rocky/RPM-GPG-KEY-Rocky-9'
+          - alias: 'Rocky_9_AppStream'
+            url: 'https://dl.rockylinux.org/pub/rocky/9/AppStream/x86_64/os/'
+            gpg: 'https://dl.rockylinux.org/pub/rocky/RPM-GPG-KEY-Rocky-9'
+        package_groups:
+          - 'Minimal Install'
+          - 'Development Tools'
+        packages:
+          - chrony
+          - cloud-init
+          - dracut-live
+          - kernel
+          - rsyslog
+          - sudo
+          - wget
+        cmds:
+          - cmd: 'dracut --add "dmsquash-live livenet network-manager" --kver $(basename /lib/modules/*) -N -f --logfile /tmp/dracut.log 2>/dev/null'
+          - cmd: 'echo DRACUT LOG:; cat /tmp/dracut.log'
+    compute-base-rocky9:
+      metadata:
+        boot_param_filename: compute-base-rocky9.yaml
+      data:
+        options:
+          layer_type: base
+          name: compute-base
+          publish_tags:
+          - 'rocky9'
+          pkg_manager: dnf
+          # NOTE: this uses the registry publication path in the
+          #       'rocky-base-9' image builder. Make sure if you change
+          #       that you change this as well.
+          parent: '{{ hosting_config.net_head_hostname }}.{{ hosting_config.net_head_domain }}:5000/{{ hosting_config.cluster_name }}/rocky-base:9'
+          registry_opts_pull:
+          - '--tls-verify=false'
+
+          # Publish SquashFS image to local S3
+          publish_s3: 'http://{{ hosting_config.net_head_hostname }}.{{ hosting_config.net_head_domain }}:9000'
+          s3_prefix: 'compute/base/'
+          s3_bucket: 'boot-images'
+          # Publish OCI image to container registry
+          #
+          # This is the only way to be able to re-use this image as
+          # a parent for another image layer.
+          #
+          # NOTE: the publish_registry setting here may be used by other
+          #       image builders as their 'parent' URL. Make sure if you
+          #       change this you change those items as well.
+          publish_registry: '{{ hosting_config.net_head_hostname }}.{{ hosting_config.net_head_domain }}:5000/demo'
+          registry_opts_push:
+          - '--tls-verify=false'
+
+        repos:
+        - alias: 'Epel9'
+          url: 'https://dl.fedoraproject.org/pub/epel/9/Everything/x86_64/'
+          gpg: 'https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-9'
+        packages:
+        - boxes
+        - cowsay
+        - figlet
+        - fortune-mod
+        - git
+        - nfs-utils
+        - tcpdump
+        - traceroute
+        - vim
+    compute-debug-rocky9:
+      metadata:
+        boot_param_filename: compute-base-rocky9.yaml
+      data:
+        options:
+          layer_type: base
+          name: compute-debug
+          publish_tags:
+          - 'rocky9'
+          pkg_manager: dnf
+          # NOTE: this uses the registry publication path in the
+          #       'compute-base-rocky9' image builder. Make sure if you
+          #       change that you change this as well.
+          parent: '{{ hosting_config.net_head_hostname }}.{{ hosting_config.net_head_domain }}:5000/{{ hosting_config.cluster_name }}/compute-base:rocky9'
+          registry_opts_pull:
+          - '--tls-verify=false'
+
+          # Publish to local S3
+          publish_s3: 'http://{{ hosting_config.net_head_hostname }}.{{ hosting_config.net_head_domain }}:9000'
+          s3_prefix: 'compute/debug/'
+          s3_bucket: 'boot-images'
+        packages:
+        - shadow-utils

@@ -1,0 +1,45 @@
+# coresmd-coredns is used on 'cluster' mode deployments of OpenCHAMI
+# to serve host names within the cluster. It is not used in 'host'
+# mode because it conflicts with libvirt DNSMasq, so it can't bind
+# on port 53. This keeps coresmd-coredns from starting, but we don't
+# really care about it. This is what the config for coresmd-coredns
+# would look like on a 'cluster' mode system.
+.:53 {
+    # Enable readiness endpoint.
+    ready
+
+    # Bind Prometheus metrics endpoint.
+    prometheus 0.0.0.0:9153
+
+    # Bind to specific IP address.
+    bind {{ hosting_config.net_head_ip }}
+    # Generate DNS records based on BMC and node data in SMD.
+    coresmd {
+        # Base URI of OpenCHAMI cluster. The SMD base endpoint is appended
+        # to this when requesting node and BMC data from SMD.
+        smd_url https://{{ hosting_config.net_head_hostname }}.{{ hosting_config.net_head_domain }}:8443
+
+        # Path to CA certificate bundle to use when verifying TLS for smd_url.
+        ca_cert /root_ca/root_ca.crt
+
+        # Frequency to update the SMD data cache.
+        cache_duration 30s
+
+        # DNS zone configurations based on records generated from SMD data.
+        zone {{ hosting_config.net_head_domain }} {
+            # Besides generating DNS records for nodes based on xname, a custom
+            # record format can be specified based on the node ID. For instance:
+            #
+            # nodes de{03d}
+            #
+            # will produce:
+            #
+            # de001.{{ hosting_config.net_head_domain }}
+            #
+            # for node ID 1 and domain {{ hosting_config.net_head_domain }}.
+            nodes nid-{03d}
+        }
+    }
+    # Specify DNS forwarders.
+    forward . {{ hosting_config.net_head_dns_server }}
+}
