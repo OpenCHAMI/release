@@ -3,15 +3,15 @@ server4:
 # listen on by uncommenting the lines below and setting the interface
 #
 # The 'listen' setting is only known on the management node at
-# deployment time, so it is filled in by 'prepare_node.sh' not
+# deployment time, so it is filled in by 'OpenCHAMI-Install.sh' not
 # templated like the rest of the content here.
   listen:
     - "%::MGMT_NET_HEAD_IFNAME::"
   plugins:
 # You are able to set the IP address of the system in server_id as the
 # place to look for a DHCP server DNS is able to be set to whatever you
-# want but it is much easier if you keep it set to the server IP Router
-# is also able to be set to whatever you network router address is
+# want but it is much easier if you keep it set so the server IP Router
+# is also able to be set to whatever your network router address is
     - searchdomains: {{ hosting_config.net_head_domain }}
     - server_id: {{ hosting_config.net_head_ip }}
     - dns: {{ hosting_config.net_head_ip }}

@@ -91,11 +91,6 @@ function switch_dns() {
     # assigned to them...
     local nameserver="${1}"; shift || fail "no nameserver specified to switch to"
     local domain="${1}"; shift || fail "no search domain specified"
-    # Optional network argument tells the logic to place the
-    # nameserver on the connection containing a local network address
-    # but not the nameserver address. If it is not provided the
-    # nameserver address is used.
-    local network="${1:-"${nameserver}"}"
     local connection=""
     local connections="$(
         for connection in $(nmcli --terse --fields NAME connection show); do
@@ -111,18 +106,10 @@ function switch_dns() {
             sudo nmcli connection up "${connection}"
     done
 
-    # Okay, now, find the connection that has an IP address that
-    # matches the internal IP address of the head-node on the
-    # management network (in other words, the connection that is the
-    # management network)
-    connection="$(
-        for connection in $(nmcli --terse --fields NAME connection show); do
-            echo -n "${connection} "
-            nmcli connection show "${connection}" | grep 'ipv4.addresses:'
-        done | grep -F "${network}" | cut -d ' ' -f 1
-    )"
-    [[ "${connection}" =~ ^[^\ ]*$ ]] || fail "more than one interface [${connection}] has the requested local network address '${network}'"
-    [[ "${connection}" != "" ]] || fail "no iinterface found with a suitable network to configure the DNS server '${nameserver}'"
+    # Now find the first interface (nmcli connection) that routes to
+    # the desired name server IP address.
+    connection="$(ip --json route get "${nameserver}" | jq -r '.[0] | .dev')"
+    [[ "${connection}" != "" ]] || fail "no interface found that can reach the DNS server '${nameserver}'"
 
     # Set the nameserver on the connection and put the cluster domain
     # in the search on the same connection

@@ -58,24 +58,53 @@ function cleanup_service() {
 function ssh_to_compute_node() {
     local hostname="${1}"; shift || fail "no hostname specified"
     local user="${1}"; shift || fail "no deployment username provided"
+    local cmd="${1}"; shift || cmd="true"
+    local retries="${1}"; shift || retries=30
     local check="-o StrictHostKeyChecking=no"
     local file="-o UserKnownHostsFile=/dev/null"
     local time="-o ConnectTimeout=10"
     local where="root@${hostname}"
     local retval=0
     info "Attempting to SSH to ${hostname} as ${user}"
-    for retry in {0..30}; do
+    for ((retry=0; retry<retries; ++retry)); do
         if sudo su - "${user}" -c \
-                "ssh ${check} ${file} ${time} ${where} true"; then
+                "ssh ${check} ${file} ${time} ${where} '${cmd}'"; then
             info "Successful SSH to ${hostname} as ${user}"
             return 0
         fi
-        sleep 10
+        if (( retry < retries-1 )); then
+            sleep 10
+        fi
     done
     info "failed to SSH to ${hostname} as ${user}"
     return 1
 }
 
+{%- if deployment_mode == 'cluster' %}
+
+# In cluster mode, if we are returning to a cluster that has already
+# been deployed and has existing nodes in it, the managed nodes will
+# have undesired residual configured state on them from when
+# cloud-init was most recently run. So, if there are reachable managed
+# nodes, clear away the cloud-init state on each one.
+{%- for node in nodes %}
+# Check reachability and clear cloud-init as needed
+host="$(printf "nid-%3.3d" {{ node.nid }})"
+if ssh_to_compute_node "${host}" "${DEPLOY_USER}" "true" "1"; then
+    ssh_to_compute_node "${host}" "${DEPLOY_USER}" \
+                        "cloud-init clean --logs" "1"
+fi
+{% endfor %}
+
+# In cluster mode, we will switch the DNS to refer to the coresmd-core-dns
+# server, which will not remain running during a re-install. To avoid
+# being left without a name server, we need to make sure we are pointing
+# to the external name server prior to cleaning up and re-installing. This
+# is also the desired state when we begin installing for the first time,
+# so make that switch unconditionally here.
+info "Switching to the cluster external DNS nameserver"
+switch_dns "${MANAGEMENT_EXT_NAMESERVER}" "${CLUSTER_DOMAIN}"
+{%- endif %}
 
 # Create the backing directories for S3 and registry that must be made
 # by 'root'. If they are already there and directories, remove them
@@ -147,10 +176,12 @@ echo "${MANAGEMENT_HEADNODE_IP} ${MANAGEMENT_HEADNODE_FQDN}" | \
 #       the shell code.
 {%- for node in nodes %}
 info "Adding managed node {{ node.hostname }} to /etc/hosts"
+NID="$(printf "nid-%3.3d"  {{ node.nid }})"
+NID_FQDN="${NID}.{{ hosting_config.net_head_domain }}"
 NODE_FQDN="{{ node.hostname }}.{{ hosting_config.net_head_domain }}"
 NODE_IP="{{ node.interfaces[0].ip_addrs[0].ip_addr }}"
 sudo sed -i /etc/hosts -e "/${NODE_FQDN}/d"
-echo "${NODE_IP} ${NODE_FQDN} {{ node.hostname }}" | \
+echo "${NODE_IP} ${NODE_FQDN} {{ node.hostname }} ${NID_FQDN} ${NID}" | \
     sudo tee -a /etc/hosts > /dev/null
 {%- endfor %}
 {%- endif %}
@@ -379,7 +410,9 @@ ochami cloud-init node set \
 {%- if deployment_mode == 'cluster' %}
 # In 'cluster' mode the nodes are all "physical" hosts already plugged
 # into the cluster network. We just need to power them on and they
-# should boot from OpenCHAMI
+# should boot from OpenCHAMI. In case they were running before this,
+# power them off first.
+power-off-node "{{ node.name }}" "{{ node.bmc_name }}" || true
 power-on-node "{{ node.name }}" "{{ node.bmc_name }}"
 {%- else %}
 # In 'host' mode, all of the compute nodes are VMs on the headnode VM,
@@ -416,5 +449,5 @@ sudo virt-install \
 # Wait for compute node(s) to come up and try to SSH to compute
 # node(s) as a sanity check of the installation.
 {%- for node in nodes %}
-ssh_to_compute_node {{ node.hostname }} "${DEPLOY_USER}"
+ssh_to_compute_node "$(printf "nid-%3.3d" {{ node.nid }})" "${DEPLOY_USER}"
 {%- endfor %}

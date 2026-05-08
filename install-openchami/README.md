@@ -20,9 +20,6 @@ managed nodes can be powered on, powered off, and reset using RedFish
 calls to RedFish instances running on Base Board Management
 Controllers (BMCs) accesible across a network from the headnode.
 
-  __NOTE: The 'cluster' mode is still under development and not quite
-  ready for use.__
-
 ## System Requirements
 
 At present, the OpenCHAMI Installer uses the 'dnf' package manager,
@@ -120,6 +117,8 @@ to the OpenCHAMI tutorial with virtual managed (compute) nodes. This
 base configuration can be modified at run time by providing the paths
 to one or more YAML format configuration overlays on the command line.
 
+### Example Configuration Overlay for ARM-64 Hosts
+
 For example, to change the repository URLs in the image builders so you
 can deploy this on an `arm64` (`aarch64`) host, all that is required is a
 configuration overlay that overrides those URLs. Something like this:
@@ -158,6 +157,102 @@ images:
           url: 'https://dl.fedoraproject.org/pub/epel/9/Everything/aarch64/'
           gpg: 'https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-9'
 ```
+
+### Example Overlay for Cluster Mode OpenCHAMI Deployment
+
+The following is an example configuration overlay for deploying
+OpenCHAMI on a cluster with a head node and four compute nodes all
+residing on a cluster network 10.2.1.0/24 with an external DNS server
+at 10.234.0.1 and a single BMC managing the four nodes and residing on
+a hardware management network 10.3.1.0/24 at 10.3.1.1. The MAC
+addresses have been collected from the BMCs and compute nodes.
+
+__NOTE: set the RedFish password in here to match the setting on the BMC__
+
+```
+# Set the deployment mode to 'cluster' instead of 'host' so that no
+# VM will be created on the head node and the cluster will be set up
+# to use coresmd-coredns for DNS.
+deployment_mode: cluster
+bmcs:
+  # An X-Name is used here because it shows the relationship between 
+  x2000c0s0b0:
+    blade_class: host-blade
+    blade_instance: 0
+    network:
+      redfish_username: root
+      # NOTE: the redfish password is not shown here, but it should be
+      #       configured to match whatever is configured for RedFish
+      #       on the BMC.
+      redfish_password: null
+      mac: 52:54:00:b2:2e:f4  # Get this from the BMC
+      # The BMC is on a Hardware Management Network (1.3.1.1/24)
+      ipv4: 10.3.1.1
+hosting_config:
+  cluster_name: demo
+  cluster_net_dhcp_start: 10.2.1.32
+  cluster_net_dhcp_end: 10.2.1.254
+  cluster_net_mask: 255.255.255.0
+  net_head_dns_server: 10.234.0.1
+  net_head_domain: openchami.cluster
+  net_head_hostname: demo
+  net_head_ip: 10.2.1.2
+nodes:
+- name: x2000c0s0b0n0
+  bmc_name: x2000c0s0b0
+  cluster_net_interface: compnet
+  hostname: compute-001
+  nid: 1
+  node_group: compute
+  interfaces:
+  - network_name: compnet
+    # Get this from the node's NIC on the cluster network
+    mac_addr: 52:54:00:3d:71:7b
+    ip_addrs:
+    - name: compnet
+      ip_addr: 10.2.1.32
+- name: x2000c0s0b0n1
+  bmc_name: x2000c0s0b0
+  cluster_net_interface: compnet
+  hostname: compute-002
+  nid: 2
+  node_group: compute
+  interfaces:
+  - network_name: compnet
+    # Get this from the node's NIC on the cluster network
+    mac_addr: 52:54:00:6a:d2:33
+    ip_addrs:
+    - name: compnet
+      ip_addr: 10.2.1.33
+- name: x2000c0s0b0n2
+  bmc_name: x2000c0s0b0
+  cluster_net_interface: compnet
+  hostname: compute-003
+  nid: 3
+  node_group: compute
+  interfaces:
+  - network_name: compnet
+    # Get this from the node's NIC on the cluster network
+    mac_addr: 52:54:00:3b:aa:78
+    ip_addrs:
+    - name: compnet
+      ip_addr: 10.2.1.34
+- name: x2000c0s0b0n3
+  bmc_name: x2000c0s0b0
+  cluster_net_interface: compnet
+  hostname: compute-004
+  nid: 4
+  node_group: compute
+  interfaces:
+  - network_name: compnet
+    # Get this from the node's NIC on the cluster network
+    mac_addr: 52:54:00:06:48:e8
+    ip_addrs:
+    - name: compnet
+      ip_addr: 10.2.1.35
+```
+
+### Working with the Installer Configuration
 
 When creating a configuration overlay, it helps to know what the
 configuration to be overlaid looks like, and what the configuration
@@ -231,7 +326,6 @@ The OpenCHAMI Installer currently has the following
 limitations. Except where otherwise noted, solutions to these are
 being investigated and implemented:
 
-- the 'cluster' mode is experimental
 - there is no 'remove' operation in the OpenCHAMI Installer
 - while the OpenCHAMI Installer tries to be re-usable, it is not
   perfectly idempotent, so situations may arise where re-running the
