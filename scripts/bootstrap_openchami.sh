@@ -54,17 +54,13 @@ acme_correction() {
 postgres_password=$(generate_random_password)
 create_secret_if_not_exists "postgres_password" "$postgres_password"
 
-# BSS Postgres Password
-bss_postgres_password=$(generate_random_password)
-create_secret_if_not_exists "bss_postgres_password" "$bss_postgres_password"
-
 # SMD Postgres Password
 smd_postgres_password=$(generate_random_password)
 create_secret_if_not_exists "smd_postgres_password" "$smd_postgres_password"
 
 
 # POSTGRES_MULTIPLE_DATABASES
-POSTGRES_MULTIPLE_DATABASES="hmsds:smd-user:$(podman secret inspect smd_postgres_password --showsecret | jq -r '.[0].SecretData'),bssdb:bss-user:$(podman secret inspect bss_postgres_password --showsecret | jq -r '.[0].SecretData')"
+POSTGRES_MULTIPLE_DATABASES="hmsds:smd-user:$(podman secret inspect smd_postgres_password --showsecret | jq -r '.[0].SecretData')"
 create_secret_if_not_exists "postgres_multiple_databases" "$POSTGRES_MULTIPLE_DATABASES"
 
 # openchami.env Configuration
