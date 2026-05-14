@@ -10,7 +10,7 @@ Wants=smd-init.service tokensmith.service
 [Container]
 ContainerName=smd
 HostName=smd
-Image=ghcr.io/openchami/smd:v2.20.0
+Image=ghcr.io/openchami/smd:v2.20.3
 
 # Environment Variables
 EnvironmentFile=/etc/openchami/configs/openchami.env
