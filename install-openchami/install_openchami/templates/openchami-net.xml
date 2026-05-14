@@ -1,0 +1,7 @@
+<network>
+  <name>{{ hosting_config.cluster_net_name }}</name>
+  <bridge name="{{ hosting_config.cluster_net_bridge_name }}" />
+  <forward mode='route'/>
+   <ip address="{{ hosting_config.net_head_ip }}" netmask="{{ hosting_config.cluster_net_mask }}">
+   </ip>
+</network>

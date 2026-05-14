@@ -1,0 +1,33 @@
+# The 'nodes.yaml' file for use in static discovery of managed nodes.
+#
+# Each BMC is discoverable on at least one discover network, the info
+# filled in by the template here is (arbitrarily) for the first
+# discovery network the BMC reside on (probably the only one, but not
+# necessarily)
+bmcs:
+{%- for name, bmc_info in bmcs.items() %}
+- xname: {{ name }}
+  mac: {{ bmc_info.network.mac }}
+  ip: {{ bmc_info.network.ipv4 }}
+  fqdn: {{ name }}.{{ hosting_config.net_head_domain }}
+{%- endfor %}
+nodes:
+{%- for node in nodes %}
+- name: {{ node.name }}
+  nid: {{ node.nid }}
+  xname: {{ node.name }}
+  bmc: {{ node.bmc_name }}
+  groups:
+    - {{ node.node_group }}
+  interfaces:
+  {%- for interface in node.interfaces %}
+  {%- if interface.network_name == node.cluster_net_interface %}
+  - mac_addr: {{ interface.mac_addr }}
+    ip_addrs:
+    {%- for ip_addr in interface.ip_addrs %}
+    - name: {{ ip_addr.name }}
+      ip_addr: {{ ip_addr.ip_addr }}
+    {%- endfor %}
+  {%- endif %}
+  {%- endfor %}
+{%- endfor %}
