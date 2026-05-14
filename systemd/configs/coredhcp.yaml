@@ -69,7 +69,7 @@ server4:
     #
     #    /* Set hostname based on type (node or BMC, respectively) */
     #    rule=type:Node,hostname:n{02d}
-    #    rule=type:NodeBMC,hostname:bmc-s{02d}
+    #    rule=type:NodeBMC,hostname:{id}
 
     # Optional catch-all for extra devices. This plugin is meant to assign
     # temporary IPs via a very short lease to devices not tracked in SMD, e.g.
