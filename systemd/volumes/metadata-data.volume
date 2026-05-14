@@ -1,0 +1,5 @@
+[Unit]
+Description=metadata-service Data Volume
+
+[Volume]
+VolumeName=metadata-service-data

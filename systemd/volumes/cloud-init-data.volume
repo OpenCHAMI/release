@@ -1,5 +1,0 @@
-[Unit]
-Description=cloud-init-server Data Volume
-
-[Volume]
-VolumeName=cloud-init-data

@@ -18,6 +18,8 @@ EnvironmentFile=/etc/openchami/configs/openchami.env
 # Secrets
 Secret=metadata-service-bootstrap-token,type=env,target=TOKENSMITH_BOOTSTRAP_TOKEN
 
+Volume=metadata-service-data.volume:/data
+
 Exec=serve
 
 # Networks for the Container to use
