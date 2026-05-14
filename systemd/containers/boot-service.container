@@ -1,0 +1,32 @@
+[Unit]
+Description=The boot-service container
+PartOf=openchami.target
+
+# Ensure dependent services have started
+Wants=smd.service
+After=smd.service
+
+[Container]
+ContainerName=boot-service
+HostName=boot-service
+Image=ghcr.io/openchami/boot-service:v0.1.5
+
+# Environment Variables
+EnvironmentFile=/etc/openchami/configs/openchami.env
+
+#Volume=/etc/openchami/configs/boot-service.yaml:/etc/boot-service/config.yaml:ro,Z
+
+# Secrets
+Secret=boot-service-bootstrap-token,type=env,target=TOKENSMITH_BOOTSTRAP_TOKEN
+
+# Networks for the Container to use
+Network=openchami-internal.network
+
+# Proxy settings
+PodmanArgs=--http-proxy=false
+
+Exec=serve --enable-legacy-api=false --enable-auth=true --tokensmith_url=http://tokensmith:8080 --hsm-url=http://smd:27779 --tokensmith-target-service smd --port 8081
+
+[Service]
+ExecStartPre=/usr/sbin/tokensmith_bootstrap_token boot-service
+Restart=always

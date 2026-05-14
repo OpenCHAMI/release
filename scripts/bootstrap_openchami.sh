@@ -46,7 +46,6 @@ acme_correction() {
   sed -i "s/^ContainerName=.*/ContainerName=${system_fqdn}/" /etc/containers/systemd/acme-register.container
   sed -i "s/^HostName=.*/HostName=${system_fqdn}/" /etc/containers/systemd/acme-register.container
   sed -i "s|-d .* \\\\|-d ${system_fqdn} \\\\|" /etc/containers/systemd/acme-register.container
-  sed -i "s|--add-host='demo\.openchami\.cluster:[0-9\.]*'|--add-host='${system_fqdn}:${primary_ip}'|" /etc/containers/systemd/opaal.container
 }
 
 # Check and create secrets with random passwords if needed
@@ -55,28 +54,13 @@ acme_correction() {
 postgres_password=$(generate_random_password)
 create_secret_if_not_exists "postgres_password" "$postgres_password"
 
-# BSS Postgres Password
-bss_postgres_password=$(generate_random_password)
-create_secret_if_not_exists "bss_postgres_password" "$bss_postgres_password"
-
 # SMD Postgres Password
 smd_postgres_password=$(generate_random_password)
 create_secret_if_not_exists "smd_postgres_password" "$smd_postgres_password"
 
-# Hydra Postgres Password
-hydra_postgres_password=$(generate_random_password)
-create_secret_if_not_exists "hydra_postgres_password" "$hydra_postgres_password"
-
-# Hydra System Secret
-hydra_system_secret=$(generate_random_password)
-create_secret_if_not_exists "hydra_system_secret" "$hydra_system_secret"
-
-# HYDRA_DSN
-HYDRA_DSN="postgres://hydra-user:$(podman secret inspect hydra_postgres_password --showsecret | jq -r '.[0].SecretData')@postgres:5432/hydradb?sslmode=disable&max_conns=20&max_idle_conns=4"
-create_secret_if_not_exists "hydra_dsn" "$HYDRA_DSN"
 
 # POSTGRES_MULTIPLE_DATABASES
-POSTGRES_MULTIPLE_DATABASES="hmsds:smd-user:$(podman secret inspect smd_postgres_password --showsecret | jq -r '.[0].SecretData'),bssdb:bss-user:$(podman secret inspect bss_postgres_password --showsecret | jq -r '.[0].SecretData'),hydradb:hydra-user:$(podman secret inspect hydra_postgres_password --showsecret | jq -r '.[0].SecretData')"
+POSTGRES_MULTIPLE_DATABASES="hmsds:smd-user:$(podman secret inspect smd_postgres_password --showsecret | jq -r '.[0].SecretData')"
 create_secret_if_not_exists "postgres_multiple_databases" "$POSTGRES_MULTIPLE_DATABASES"
 
 # openchami.env Configuration

@@ -1,14 +1,14 @@
 [Unit]
 Description=The CoreSMD CoreDHCP container
-Wants=haproxy.service
-After=haproxy.service
+Wants=tokensmith.service smd.service
+After=tokensmith.service smd.service
 PartOf=openchami.target
 
 [Container]
 ContainerName=coresmd-coredhcp
 
 HostName=coresmd-coredhcp
-Image=ghcr.io/openchami/coresmd:v0.4.3
+Image=ghcr.io/openchami/coresmd:v0.6.1
 
 # Capabilities
 AddCapability=NET_ADMIN

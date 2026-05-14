@@ -1,0 +1,28 @@
+[Unit]
+Description=The tokensmith container
+PartOf=openchami.target
+
+[Container]
+ContainerName=tokensmith
+HostName=tokensmith
+Image=ghcr.io/openchami/tokensmith:v0.4.1
+#Image=tokensmith:test
+EnvironmentFile=/etc/openchami/configs/openchami.env
+
+Exec=--enable-local-user-mint
+
+# Volumes
+Volume=/etc/openchami/configs/tokensmith.json:/etc/tokensmith/config.json:Z
+Volume=tokensmith-data:/tokensmith/data:Z,U
+
+# Networks for the Container to use
+Network=openchami-internal.network
+Network=openchami-jwt-internal.network
+
+# Extra hosts
+PodmanArgs=--add-host='demo.openchami.cluster:172.16.0.254'
+# Proxy settings
+PodmanArgs=--http-proxy=false
+
+[Service]
+Restart=always
