@@ -1,18 +1,96 @@
+# Based on https://github.com/coredhcp/coredhcp/blob/master/cmds/coredhcp/config.yml.example
+# See there for more extensive CoreDHCP configuration documentation.
+
 server4:
-# You can configure the specific interfaces that you want OpenCHAMI to listen on by 
-# uncommenting the lines below and setting the interface
-  # listen:
-  #   - "%virbr-openchami"
+  # Optionally define how CoreDHCP binds to an interface or address. If unset,
+  # the server will bind to all interfaces (0.0.0.0).
+  #
+  #listen:
+  #  - "%virbr-openchami"
   plugins:
-# You are able to set the IP address of the system in server_id as the place to look for a DHCP server
-# DNS is able to be set to whatever you want but it is much easier if you keep it set to the server IP
-# Router is also able to be set to whatever you network router address is 
-    # - server_id: 172.16.0.254
-    # - dns: 172.16.0.254
-    # - router: 172.16.0.254
+    # Set DHCP Server Identifier to help resolve situations when there are
+    # multiple DHCP servers on a network.
+    #- server_id: 172.16.0.254
+
+    # Advertise list of DNS resolvers to use for hosts on network.
+    #- dns: 172.16.0.254
+
+    # REQUIRED: Advertise address of default router on network.
+    #- router: 172.16.0.254
+
+    # Advertise network mask of assigned IPs on network.
     - netmask: 255.255.255.0
-# The lines below define where the system should assign ip addresses for systems that do not have
-# mac addresses stored in SMD
-    # - coresmd: https://demo.openchami.cluster:8443 http://172.16.0.254:8081 /root_ca/root_ca.crt 30s 1h false
-    # - bootloop: /tmp/coredhcp.db default 5m 172.16.0.200 172.16.0.250
+
+    #
+    # OpenCHAMI CONFIGURATION
+    #
+
+    # Assign IP addresses to devices known to OpenCHAMI based on MAC address.
+    #- coresmd: |
+    #    /* Base URI for contacting SMD */
+    #    svc_base_uri=https://demo.openchami.cluster:8443
+    #
+    #    /* Base URI for contacting boot-service for boot scripts */
+    #    ipxe_base_uri=http://172.16.0.254:8081
+    #
+    #    /*
+    #     * Path to root CA certificate in container to use for TLS
+    #     * verification for communication with SMD
+    #     */
+    #    ca_cert=/root_ca/root_ca.crt
+    #
+    #    /* Refresh interval for CoreSMD's component cache */
+    #    cache_valid=30s
+    #
+    #    /* Duration DHCP leases should be valid */
+    #    lease_time=1h
+    #
+    #    /* Toggle TFTP single-port mode */
+    #    single_port=false
+    #
+    #    /*
+    #     * RICH RULES
+    #     *
+    #     * These are used to set DHCP options based on certain selectors.
+    #     * See: https://github.com/OpenCHAMI/coresmd/blob/main/examples/coredhcp/rules.md
+    #     */
+    #
+    #    /* Domain to append to set hostnames (able to be overridden)
+    #    domain=openchami.cluster
+    #
+    #    /*
+    #     * Log level for rules.
+    #     *
+    #     * none: do not log
+    #     * info: log rule matches
+    #     * debug: log rule matches and non-matches
+    #     */
+    #    rule_log=info
+    #
+    #    /* Set hostname based on type (node or BMC, respectively) */
+    #    rule=type:Node,hostname:n{02d}
+    #    rule=type:NodeBMC,hostname:bmc-s{02d}
+
+    # Optional catch-all for extra devices. This plugin is meant to assign
+    # temporary IPs via a very short lease to devices not tracked in SMD, e.g.
+    # for BMCs to be discoverable via Redfish so they _can_ be added to SMD.
+    # Non-BMC devices are served an iPXE script that instructs them to reboot
+    # (by default, this is customizable, hence the name 'bootloop') so that
+    # they will constantly try to get a new lease. The idea is that once they
+    # are added to SMD, CoreSMD above will catch it.
+    #- bootloop: |
+    #    /* Where to store leases (sqlite)
+    #    lease_file=/tmp/coredhcp.db
+    #
+    #    /* iPXE script to use ('default' reboots)
+    #    script_path=default
+    #
+    #    /* Duration of short-lived lease */
+    #    lease_time=5m
+    #
+    #    /* Beginning IP of assignable IPv4 addresses */
+    #    ipv4_start=172.16.0.200
+    #
+    #    /* Ending IP of assignable IPv4 addresses */
+    #    ipv4_end=172.16.0.250
 
