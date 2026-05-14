@@ -1,4 +1,9 @@
 #!/bin/bash
+usage() {
+  echo "usage: $0 CLIENT"
+  echo
+  echo 'CLIENT: name of client service to generate token for'
+}
 
 CLIENT="${1}"
 SERVICE="smd"
@@ -6,6 +11,7 @@ SERVICE="smd"
 if [[ -z "$CLIENT" ]]
 then
 	echo "Empty client"
+    usage >&2
 	exit 1
 fi
 
