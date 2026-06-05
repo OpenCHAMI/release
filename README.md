@@ -1,6 +1,10 @@
-# OpenCHAMI Releases
+# OpenCHAMI Quadlet Deployment (Release RPM)
 
-OpenCHAMI is a collection of microservices that are assembled and tested to provide HPC cluster provisioning and management.  It is released quarterly.  As far as possible, each release is supported for three years from the release date.  Since some of the components in OpenCHAMI are not developed by the consortium, we cannot promise support beyond that provided by the upstream projects.  See our [Release Policy](/Release_Policy.md) for more details.
+This repository provides an **RPM package** for deploying OpenCHAMI services as **Podman Quadlets**. It is **one of several valid deployment methods** and is the companion to the **[OpenCHAMI Tutorial](https://openchami.org/docs/tutorial/)**.
+
+**Note**: OpenCHAMI is a collection of independently released microservices. This repository packages a tested combination of those microservices into a single RPM for convenience in **quadlet-based deployments**. It is **not** the official "release" of OpenCHAMI, as no single release exists—each microservice is released independently.
+
+For a standardized way to deploy OpenCHAMI, follow the **[OpenCHAMI Tutorial](https://openchami.org/docs/tutorial/)**, which uses this RPM to set up a functional cluster.
 
 ## Building Locally
 
@@ -34,9 +38,20 @@ stored in the `GPG_SUBKEY_B64` repository secret. The workflow also exports the
 matching ASCII-armored public key as a release asset so downstream consumers can
 verify the published RPM signature.
 
-## Current Release
+## OpenCHAMI Deployment Methods
 
-OpenCHAMI is in development without an initial release.  We expect a first supported release in Q1 2025.  If you would like to follow the most current, stable configuration, each of the partners maintains a deployment recipe that will become a release candidate in our [Deployment Recipes](https://github.com/OpenCHAMI/deployment-recipes) Repository.
+OpenCHAMI is flexible and can be deployed in multiple ways. Here are the recommended options:
+
+| Method | Description | Recommended For |
+|--------|-------------|-----------------|
+| **[Tutorial](https://openchami.org/docs/tutorial/)** | Step-by-step guide using Podman Quadlets | New users, learning OpenCHAMI |
+| **This RPM** | Unified RPM for quadlet-based deployments | Red Hat-based systems, production use |
+| **[kube-deploy](https://github.com/OpenCHAMI/kube-deploy)** | Helm charts for Kubernetes | Kubernetes users |
+| **[openchami-operator](https://github.com/OpenCHAMI/openchami-operator)** | Kubernetes operator | Advanced Kubernetes orchestration |
+| **[integration-sandbox](https://github.com/OpenCHAMI/integration-sandbox)** | Testing environment | Development and testing |
+| **[deployment-recipes](https://github.com/OpenCHAMI/deployment-recipes)** | Organization-specific patterns | Legacy or custom deployments *(not recommended for new users)* |
+
+We recommend starting with the **Tutorial** before exploring other methods.
 
 ### Feature Map
 
