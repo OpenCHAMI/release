@@ -23,32 +23,18 @@ container_curl() {
     ${CONTAINER_CMD:-docker} run -it --rm "${CURL_CONTAINER}:${CURL_TAG}" -s $url
 }
 
-create_client_credentials() {
-   ${CONTAINER_CMD:-docker} exec hydra hydra create client \
-    --endpoint http://hydra:4445/ \
-    --format json \
-    --grant-type client_credentials \
-    --scope openid \
-    --scope smd.read 
-}
-
-retrieve_access_token() {
-    local CLIENT_ID=$1
-    local CLIENT_SECRET=$2
-
-    ${CONTAINER_CMD:-docker} run --http-proxy=false --rm --network openchami-jwt-internal "${CURL_CONTAINER}:${CURL_TAG}" curl -s -u "$CLIENT_ID:$CLIENT_SECRET" \
-    -d grant_type=client_credentials \
-    -d scope=openid+smd.read \
-    http://hydra:4444/oauth2/token
-}
-
 gen_access_token() {
-    local CLIENT_CREDENTIALS
-    CLIENT_CREDENTIALS=$(create_client_credentials)
-    local CLIENT_ID=`echo $CLIENT_CREDENTIALS | jq -r '.client_id'`
-    local CLIENT_SECRET=`echo $CLIENT_CREDENTIALS | jq -r '.client_secret'`
-    local ACCESS_TOKEN=$(retrieve_access_token $CLIENT_ID $CLIENT_SECRET | jq -r .access_token)
-    echo $ACCESS_TOKEN
+    ${CONTAINER_CMD:-docker} exec tokensmith \
+	    /bin/sh \
+	    -c \
+	    "/usr/local/bin/tokensmith \
+		user-token \
+		create \
+		--audience smd \
+		--key-file /tokensmith/data/keys/private.pem \
+		--subject 'admin@example.com' \
+		--scopes 'admin' \
+		--enable-local-user-mint"
 }
 
 
