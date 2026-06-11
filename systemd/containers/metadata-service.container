@@ -20,7 +20,7 @@ Secret=metadata-service-bootstrap-token,type=env,target=TOKENSMITH_BOOTSTRAP_TOK
 
 Volume=metadata-data.volume:/data
 
-Exec=serve
+Exec=serve --tokensmith-url=http://tokensmith:8080
 
 # Networks for the Container to use
 Network=openchami-internal.network
