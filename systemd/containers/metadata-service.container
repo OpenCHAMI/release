@@ -25,6 +25,10 @@ Exec=serve --tokensmith-url=http://tokensmith:8080
 # Networks for the Container to use
 Network=openchami-internal.network
 
+# For WireGuard tunnel creation
+AddCapability=cap_net_admin
+AddDevice=/dev/net/tun
+
 # Proxy settings
 PodmanArgs=--http-proxy=false
 
