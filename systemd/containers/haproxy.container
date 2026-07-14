@@ -3,7 +3,7 @@ Description=The haproxy container
 Wants=boot-service.service metadata-service.service smd.service acme-deploy.service
 After=openchami-external-network.service smd.service boot-service.service acme-deploy.service metadata-service.service
 Requires=openchami-external-network.service acme-deploy.service
-PartOf=openchami.target
+PartOf=openchami.target acme-deploy.service
 
 [Container]
 ContainerName=haproxy
