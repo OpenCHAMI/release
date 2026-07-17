@@ -30,8 +30,8 @@ server4:
     #    /* Base URI for contacting SMD */
     #    svc_base_uri=https://demo.openchami.cluster:8443
     #
-    #    /* Base URI for contacting boot-service for boot scripts */
-    #    ipxe_base_uri=http://172.16.0.254:8081
+    #    /* URI to fetch bootscripts */
+    #    ipxe_uri=http://172.16.0.254:8081/boot-service/bootscript
     #
     #    /*
     #     * Path to root CA certificate in container to use for TLS
