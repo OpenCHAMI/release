@@ -1,0 +1,5 @@
+[Unit]
+Description=boot-service Data Volume
+
+[Volume]
+VolumeName=boot-service-data
