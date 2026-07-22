@@ -8,7 +8,7 @@ PartOf=openchami.target
 [Container]
 ContainerName=metadata-service
 HostName=metadata-service
-Image=ghcr.io/openchami/metadata-service:v0.1.2
+Image=ghcr.io/openchami/metadata-service:v0.2.0
 
 Secret=metadata-service-bootstrap-token,type=env,target=TOKENSMITH_BOOTSTRAP_TOKEN
 
@@ -18,9 +18,9 @@ EnvironmentFile=/etc/openchami/configs/openchami.env
 # Secrets
 Secret=metadata-service-bootstrap-token,type=env,target=TOKENSMITH_BOOTSTRAP_TOKEN
 
-Volume=metadata-data.volume:/data
-
-Exec=serve --tokensmith-url=http://tokensmith:8080
+# Volumes
+Volume=/etc/openchami/configs/metadata-service.yaml:/etc/ochami-metadata/.ochami-metadata:ro,Z
+Volume=metadata-service-data:/app/data
 
 # Networks for the Container to use
 Network=openchami-internal.network
