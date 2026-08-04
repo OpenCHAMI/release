@@ -19,7 +19,7 @@ EnvironmentFile=/etc/openchami/configs/openchami.env
 Secret=metadata-service-bootstrap-token,type=env,target=TOKENSMITH_BOOTSTRAP_TOKEN
 
 # Volumes
-Volume=/etc/openchami/configs/metadata-service.yaml:/etc/ochami-metadata/.ochami-metadata:ro,Z
+Volume=/etc/openchami/configs/metadata-service.yaml:/etc/metadata-service/config.yaml:ro,Z
 Volume=metadata-service-data:/app/data
 
 # Networks for the Container to use
