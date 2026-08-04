@@ -9,7 +9,7 @@ After=smd.service
 [Container]
 ContainerName=boot-service
 HostName=boot-service
-Image=ghcr.io/openchami/boot-service:v0.3.0
+Image=ghcr.io/openchami/boot-service:v0.3.1
 
 # Environment Variables
 EnvironmentFile=/etc/openchami/configs/openchami.env
