@@ -2,7 +2,6 @@
 
 FILE_OVERRIDE_GLOBAL="/etc/containers/systemd/containers.d/99-openchami-site-override.conf"
 FILE_OVERRIDE_ACME_QUADLETS="/etc/containers/systemd/acme-.container.d/99-site-override.conf"
-FILE_OVERRIDE_ACME_REGISTER="/etc/containers/systemd/acme-register.container.d/99-site-override.conf"
 
 notify_dns_change() {
     echo "Changed FQDN to ${1}"
@@ -30,13 +29,6 @@ update_dns() {
 Environment=SYSTEM_FQDN=${system_fqdn}
 EOF
     install -D -m 0644 "${workfile}" "${FILE_OVERRIDE_ACME_QUADLETS}"
-
-    cat <<EOF > "${workfile}"
-# MANAGED BY '${0}'
-[Container]
-HostName=${system_fqdn}
-EOF
-    install -D -m 0644 "${workfile}" "${FILE_OVERRIDE_ACME_REGISTER}"
 }
 
 unset_dns() {
@@ -45,8 +37,7 @@ unset_dns() {
     local file
     for file in \
         "${FILE_OVERRIDE_GLOBAL}" \
-        "${FILE_OVERRIDE_ACME_QUADLETS}" \
-        "${FILE_OVERRIDE_ACME_REGISTER}"
+        "${FILE_OVERRIDE_ACME_QUADLETS}"
     do
         [ -e "$file" ] && rm -v "$file"
     done

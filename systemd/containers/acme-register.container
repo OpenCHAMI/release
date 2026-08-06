@@ -7,7 +7,7 @@ Upholds=acme-deploy.service
 
 [Container]
 ContainerName=acme-register
-HostName=%H
+HostName=${SYSTEM_FQDN}
 Image=docker.io/neilpang/acme.sh:3.1.1
 
 # Volumes
