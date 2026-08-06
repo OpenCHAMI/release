@@ -17,7 +17,7 @@ notify_dns_change() {
 }
 
 update_dns() {
-    local system_fqdn="$1"
+    local system_fqdn="${1}"
     local workfile
 
     workfile="$(mktemp)"
@@ -25,14 +25,14 @@ update_dns() {
 
     echo "Updating local site-specific OpenCHAMI ACME FQDN..."
     cat <<EOF > "${workfile}"
-# MANAGED BY '$0'
+# MANAGED BY '${0}'
 [Service]
 Environment=SYSTEM_FQDN=${system_fqdn}
 EOF
     install -D -m 0644 "${workfile}" "${FILE_OVERRIDE_ACME_QUADLETS}"
 
     cat <<EOF > "${workfile}"
-# MANAGED BY '$0'
+# MANAGED BY '${0}'
 [Container]
 HostName=${system_fqdn}
 EOF
@@ -44,9 +44,9 @@ unset_dns() {
 
     local file
     for file in \
-        "$FILE_OVERRIDE_GLOBAL" \
-        "$FILE_OVERRIDE_ACME_QUADLETS" \
-        "$FILE_OVERRIDE_ACME_REGISTER"
+        "${FILE_OVERRIDE_GLOBAL}" \
+        "${FILE_OVERRIDE_ACME_QUADLETS}" \
+        "${FILE_OVERRIDE_ACME_REGISTER}"
     do
         [ -e "$file" ] && rm -v "$file"
     done
@@ -55,26 +55,26 @@ unset_dns() {
 help_page() {
     echo "OpenCHAMI Certificate Update"
     echo "Update OpenCHAMI Certificates"
-    echo "Usage: $0 update FQDN"
+    echo "Usage: ${0} update FQDN"
     echo
     echo "EXAMPLES:"
-    echo "  $0 update demo.openchami.cluster"
+    echo "  ${0} update demo.openchami.cluster"
 }
 
-case "$1" in
+case "${1}" in
     update)
-        if [[ -z "$2" ]]; then
+        if [[ -z "${2}" ]]; then
             help_page
         else
             if [[ $EUID -ne 0 ]]; then
                 echo "This script must be run as root"
                 exit 1
             else
-                update_dns "$2"
+                update_dns "${2}"
 
                 # Reload SystemD after .container override changes
                 systemctl daemon-reload
-                notify_dns_change "$2"
+                notify_dns_change "${2}"
             fi
         fi
         ;;
