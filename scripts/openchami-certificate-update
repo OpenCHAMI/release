@@ -5,7 +5,7 @@ FILE_OVERRIDE_ACME_QUADLETS="/etc/containers/systemd/acme-.container.d/99-site-o
 FILE_OVERRIDE_ACME_REGISTER="/etc/containers/systemd/acme-register.container.d/99-site-override.conf"
 
 notify_dns_change() {
-    echo "Changed FQDN to $1"
+    echo "Changed FQDN to ${1}"
     echo 'Either restart all of the OpenCHAMI services:'
     echo
     echo '  sudo systemctl restart openchami.target'
@@ -22,19 +22,6 @@ update_dns() {
 
     workfile="$(mktemp)"
     trap 'rm -f "$workfile"' RETURN
-
-    echo "Updating local site-specific OpenCHAMI URL overrides..."
-    cat <<EOF > "${workfile}"
-# MANAGED BY '$0'
-[Container]
-Environment=URLS_SELF_ISSUER=https://${system_fqdn}
-Environment=URLS_SELF_PUBLIC=https://${system_fqdn}
-Environment=URLS_LOGIN=https://${system_fqdn}/login
-Environment=URLS_CONSENT=https://${system_fqdn}/consent
-Environment=URLS_LOGOUT=https://${system_fqdn}/logout
-Environment=BSS_IPXE_SERVER=${system_fqdn}
-EOF
-    install -D -m 0644 "${workfile}" "${FILE_OVERRIDE_GLOBAL}"
 
     echo "Updating local site-specific OpenCHAMI ACME FQDN..."
     cat <<EOF > "${workfile}"
