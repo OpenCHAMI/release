@@ -48,7 +48,7 @@ Exec=--deploy \
   --home /acme.sh \
   --standalone \
   --deploy-hook haproxy \
-  --force'
+  --force
 
 [Service]
 Restart=on-failure

@@ -42,7 +42,7 @@ Exec=--issue \
   --home /acme.sh \
   -d ${SYSTEM_FQDN} \
   --standalone \
-  --force'
+  --force
 
 [Service]
 Restart=on-failure
