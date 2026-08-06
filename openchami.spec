@@ -30,19 +30,19 @@ The quadlets, systemd units, and config files for the Open Composable, Heterogen
 # 1) Install config, unit, and script files
 mkdir -p %{buildroot}/etc/openchami/configs \
          %{buildroot}/etc/openchami/pg-init \
-         %{buildroot}/etc/containers/systemd \
-         %{buildroot}/etc/systemd/system \
+         %{buildroot}/usr/share/containers/systemd \
+         %{buildroot}/usr/lib/systemd/system \
          %{buildroot}/usr/bin \
          %{buildroot}/usr/sbin \
          %{buildroot}/etc/profile.d \
          %{buildroot}/usr/libexec/openchami
 
 cp -r systemd/configs/*                     %{buildroot}/etc/openchami/configs/
-cp -r systemd/containers/*                  %{buildroot}/etc/containers/systemd/
-cp -r systemd/volumes/*                     %{buildroot}/etc/containers/systemd/
-cp -r systemd/networks/*                    %{buildroot}/etc/containers/systemd/
-cp -r systemd/targets/*                     %{buildroot}/etc/systemd/system/
-cp -r systemd/system/*                      %{buildroot}/etc/systemd/system/
+cp -r systemd/containers/*                  %{buildroot}/usr/share/containers/systemd/
+cp -r systemd/volumes/*                     %{buildroot}/usr/share/containers/systemd/
+cp -r systemd/networks/*                    %{buildroot}/usr/share/containers/systemd/
+cp -r systemd/targets/*                     %{buildroot}/usr/lib/systemd/system/
+cp -r systemd/system/*                      %{buildroot}/usr/lib/systemd/system/
 cp scripts/bootstrap_openchami.sh           %{buildroot}/usr/libexec/openchami/
 cp scripts/openchami-certificate-update     %{buildroot}/usr/bin/
 cp scripts/openchami_profile.sh             %{buildroot}/etc/profile.d/openchami.sh
@@ -63,11 +63,11 @@ chmod 644 %{buildroot}/etc/openchami/configs/*
 %files
 %license LICENSE
 %config(noreplace) /etc/openchami/configs/*
-/etc/containers/systemd/*
-/etc/systemd/system/openchami.target
-/etc/systemd/system/openchami-cert-renewal.service
-/etc/systemd/system/openchami-cert-renewal.timer
-/etc/systemd/system/openchami-cert-trust.service
+/usr/share/containers/systemd/*
+/usr/lib/systemd/system/openchami.target
+/usr/lib/systemd/system/openchami-cert-renewal.service
+/usr/lib/systemd/system/openchami-cert-renewal.timer
+/usr/lib/systemd/system/openchami-cert-trust.service
 /usr/libexec/openchami/bootstrap_openchami.sh
 /usr/libexec/openchami/ohpc-nodes.sh
 /etc/profile.d/openchami.sh
@@ -76,8 +76,16 @@ chmod 644 %{buildroot}/etc/openchami/configs/*
 /usr/sbin/tokensmith_bootstrap_token
 
 %pre
+# NOTES:
+# 1. `coresmd` refers to the legacy implementation before the CoreDNS split.
+# 2. Releases now install Quadlets under the standard system-managed path,
+#    `/usr/share/containers/systemd`, instead of the admin-managed
+#    `/etc/containers/systemd`. This aligns with standard systemd override
+#    semantics and keeps local modifications separate from packaged files.
+# 3. This warning and these comments will remain until support for the legacy,
+#    non-fabrica services is dropped.
 if [ -f /etc/containers/systemd/coresmd.container ]; then
-	echo 'WARNING: /etc/containers/systemd/coresmd.container as been replaced by /etc/containers/systemd/coresmd-coredhcp.container.'
+	echo 'WARNING: /etc/containers/systemd/coresmd.container as been replaced by /usr/share/containers/systemd/coresmd-coredhcp.container.'
 	echo '         Migrate to coresmd-coredhcp to avoid any issues.'
 fi
 
