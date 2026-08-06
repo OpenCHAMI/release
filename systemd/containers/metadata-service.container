@@ -20,7 +20,7 @@ Secret=metadata-service-bootstrap-token,type=env,target=TOKENSMITH_BOOTSTRAP_TOK
 
 # Volumes
 Volume=/etc/openchami/configs/metadata-service.yaml:/etc/metadata-service/config.yaml:ro,Z
-Volume=metadata-service-data:/app/data
+Volume=metadata-service-data:/app/data:rw,Z
 
 # Networks for the Container to use
 Network=openchami-internal.network
