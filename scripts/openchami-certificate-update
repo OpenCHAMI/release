@@ -47,6 +47,11 @@ help_page() {
     echo "OpenCHAMI Certificate Update"
     echo "Update OpenCHAMI Certificates"
     echo "Usage: ${0} update FQDN"
+    echo "       ${0} unset"
+    echo
+    echo "COMMANDS:"
+    echo "  update - Add systemd overrides to update FQDN for certificates"
+    echo "  unset  - Remove systemd overrides created with 'update'"
     echo
     echo "EXAMPLES:"
     echo "  ${0} update demo.openchami.cluster"
