@@ -76,17 +76,53 @@ chmod 644 %{buildroot}/etc/openchami/configs/*
 /usr/sbin/tokensmith_bootstrap_token
 
 %pre
-# NOTES:
-# 1. `coresmd` refers to the legacy implementation before the CoreDNS split.
-# 2. Releases now install Quadlets under the standard system-managed path,
-#    `/usr/share/containers/systemd`, instead of the admin-managed
-#    `/etc/containers/systemd`. This aligns with standard systemd override
-#    semantics and keeps local modifications separate from packaged files.
-# 3. This warning and these comments will remain until support for the legacy,
-#    non-fabrica services is dropped.
-if [ -f /etc/containers/systemd/coresmd.container ]; then
-	echo 'WARNING: /etc/containers/systemd/coresmd.container as been replaced by /usr/share/containers/systemd/coresmd-coredhcp.container.'
-	echo '         Migrate to coresmd-coredhcp to avoid any issues.'
+# Any pre-existing OpenCHAMI quadlets in /etc/containers/systemd could
+# unintentionally override the installed quadlets. Exit if any remaining are
+# found and link to migration guide.
+if [ -f /etc/containers/systemd/acme-deploy.container ] \
+     || [ -f /etc/containers/systemd/acme-register.container ] \
+     || [ -f /etc/containers/systemd/boot-service.container ] \
+     || [ -f /etc/containers/systemd/bss-init.container ] \
+     || [ -f /etc/containers/systemd/bss.container ] \
+     || [ -f /etc/containers/systemd/cloud-init-server.container ] \
+     || [ -f /etc/containers/systemd/coresmd.container ] \
+     || [ -f /etc/containers/systemd/coresmd-coredhcp.container ] \
+     || [ -f /etc/containers/systemd/coresmd-coredns.container ] \
+     || [ -f /etc/containers/systemd/haproxy.container ] \
+     || [ -f /etc/containers/systemd/metadata-service.container ] \
+     || [ -f /etc/containers/systemd/hydra-gen-jwks.container ] \
+     || [ -f /etc/containers/systemd/hydra-migrate.container ] \
+     || [ -f /etc/containers/systemd/hydra.container ] \
+     || [ -f /etc/containers/systemd/opaal-idp.container ] \
+     || [ -f /etc/containers/systemd/opaal.container ] \
+     || [ -f /etc/containers/systemd/postgres.container ] \
+     || [ -f /etc/containers/systemd/smd-init.container ] \
+     || [ -f /etc/containers/systemd/smd.container ] \
+     || [ -f /etc/containers/systemd/step-ca.container ] \
+     || [ -f /etc/containers/systemd/tokensmith.container ] \
+     || [ -f /etc/containers/systemd/openchami-cert-internal.network ] \
+     || [ -f /etc/containers/systemd/openchami-external.network ] \
+     || [ -f /etc/containers/systemd/openchami-internal.network ] \
+     || [ -f /etc/containers/systemd/openchami-jwt-internal.network ] \
+     || [ -f /etc/containers/systemd/acme-certs.volume ] \
+     || [ -f /etc/containers/systemd/boot-service-data.volume ] \
+     || [ -f /etc/containers/systemd/cloud-init-data.volume ] \
+     || [ -f /etc/containers/systemd/haproxy-certs.volume ] \
+     || [ -f /etc/containers/systemd/metadata-service-data.volume ] \
+     || [ -f /etc/containers/systemd/postgres-data.volume ] \
+     || [ -f /etc/containers/systemd/step-ca-db.volume ] \
+     || [ -f /etc/containers/systemd/step-ca-home.volume ] \
+     || [ -f /etc/containers/systemd/step-root-ca.volume ] \
+     || [ -f /etc/containers/systemd/tokensmith.volume ] \
+; then
+	echo 'ERROR: Old OpenCHAMI quadlets still exist in /etc/containers/systemd.'
+        echo '       These could unintentionally overwrite the installed quadlets.'
+	echo '       Uninstall openchami to get rid of them before upgrading.'
+        echo
+        echo '       See the following for a guide on migrating to this release:'
+        echo
+        echo '       https://openchami.org/docs/guides/fabrica-migration'
+	exit 1
 fi
 
 %post
