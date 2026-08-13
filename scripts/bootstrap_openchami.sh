@@ -36,4 +36,8 @@ create_secret_if_not_exists "smd_postgres_password" "$smd_postgres_password"
 
 # POSTGRES_MULTIPLE_DATABASES
 POSTGRES_MULTIPLE_DATABASES="hmsds:smd-user:$(podman secret inspect smd_postgres_password --showsecret | jq -r '.[0].SecretData')"
+if podman secret exists postgres_multiple_databases; then
+    echo "Deleting secret: postgres_multiple_databases"
+    podman secret rm postgres_multiple_databases
+fi
 create_secret_if_not_exists "postgres_multiple_databases" "$POSTGRES_MULTIPLE_DATABASES"
