@@ -38,9 +38,9 @@ jobs:
       - name: Trigger vTDS deployment
         uses: actions/github-script@v9
         env:
-          HPE_TOKEN: ${{ steps.hpe-app-token.outputs.hpe-app-token }}
+          HPE_TOKEN: ${{ steps.hpe-app-token.outputs.token }}
         with:
-          github-token: ${{ steps.ochami-app-token.outputs.ochami-app-token }}
+          github-token: ${{ steps.ochami-app-token.outputs.token }}
           script: |
             const hpeOrg = getOctokit(process.env.HPE_TOKEN);
 
