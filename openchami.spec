@@ -29,7 +29,6 @@ The quadlets, systemd units, and config files for the Open Composable, Heterogen
 %install
 # 1) Install config, unit, and script files
 mkdir -p %{buildroot}/etc/openchami/configs \
-         %{buildroot}/etc/openchami/pg-init \
          %{buildroot}/usr/share/containers/systemd \
          %{buildroot}/usr/lib/systemd/system \
          %{buildroot}/usr/bin \
@@ -46,7 +45,6 @@ cp -r systemd/system/*                      %{buildroot}/usr/lib/systemd/system/
 cp scripts/bootstrap_openchami.sh           %{buildroot}/usr/libexec/openchami/
 cp scripts/openchami-certificate-update     %{buildroot}/usr/bin/
 cp scripts/openchami_profile.sh             %{buildroot}/etc/profile.d/openchami.sh
-cp scripts/multi-psql-db.sh                 %{buildroot}/etc/openchami/pg-init/multi-psql-db.sh
 cp scripts/ohpc-nodes.sh                    %{buildroot}/usr/libexec/openchami/
 cp scripts/tokensmith_bootstrap_token       %{buildroot}/usr/sbin/
 
@@ -71,7 +69,6 @@ chmod 644 %{buildroot}/etc/openchami/configs/*
 /usr/libexec/openchami/bootstrap_openchami.sh
 /usr/libexec/openchami/ohpc-nodes.sh
 /etc/profile.d/openchami.sh
-/etc/openchami/pg-init/multi-psql-db.sh
 /usr/bin/openchami-certificate-update
 /usr/sbin/tokensmith_bootstrap_token
 
@@ -95,7 +92,6 @@ if [ -f /etc/containers/systemd/acme-deploy.container ] \
      || [ -f /etc/containers/systemd/hydra.container ] \
      || [ -f /etc/containers/systemd/opaal-idp.container ] \
      || [ -f /etc/containers/systemd/opaal.container ] \
-     || [ -f /etc/containers/systemd/postgres.container ] \
      || [ -f /etc/containers/systemd/smd-init.container ] \
      || [ -f /etc/containers/systemd/smd.container ] \
      || [ -f /etc/containers/systemd/step-ca.container ] \
@@ -109,7 +105,6 @@ if [ -f /etc/containers/systemd/acme-deploy.container ] \
      || [ -f /etc/containers/systemd/cloud-init-data.volume ] \
      || [ -f /etc/containers/systemd/haproxy-certs.volume ] \
      || [ -f /etc/containers/systemd/metadata-service-data.volume ] \
-     || [ -f /etc/containers/systemd/postgres-data.volume ] \
      || [ -f /etc/containers/systemd/step-ca-db.volume ] \
      || [ -f /etc/containers/systemd/step-ca-home.volume ] \
      || [ -f /etc/containers/systemd/step-root-ca.volume ] \
