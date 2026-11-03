@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2026 OpenCHAMI Contributors
+#
+# SPDX-License-Identifier: MIT
+
+name: HAProxy request identity
+
+on:
+  pull_request:
+    paths:
+      - 'systemd/configs/haproxy.cfg'
+      - 'tests/**'
+      - 'Makefile'
+      - '.github/workflows/haproxy.yaml'
+  push:
+    branches: [main]
+    paths:
+      - 'systemd/configs/haproxy.cfg'
+      - 'tests/**'
+      - 'Makefile'
+      - '.github/workflows/haproxy.yaml'
+
+permissions:
+  contents: read
+
+jobs:
+  request-identity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install test dependencies
+        run: sudo apt-get update && sudo apt-get install -y haproxy openssl
+      - name: Test deployed request rules
+        run: make test-haproxy
