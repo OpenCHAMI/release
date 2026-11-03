@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2026 OpenCHAMI Contributors
+
+SPDX-License-Identifier: MIT
+-->
+
 # OpenCHAMI Quadlet Deployment (Release RPM)
 
 This repository provides an **RPM package** for deploying OpenCHAMI services as **Podman Quadlets**. It is **one of several valid deployment methods** and is the companion to the **[OpenCHAMI Tutorial](https://openchami.org/docs/tutorial/)**.
@@ -5,6 +11,11 @@ This repository provides an **RPM package** for deploying OpenCHAMI services as 
 **Note**: OpenCHAMI is a collection of independently released microservices. This repository packages a tested combination of those microservices into a single RPM for convenience in **quadlet-based deployments**. It is **not** the official "release" of OpenCHAMI, as no single release exists—each microservice is released independently.
 
 For a standardized way to deploy OpenCHAMI, follow the **[OpenCHAMI Tutorial](https://openchami.org/docs/tutorial/)**, which uses this RPM to set up a functional cluster.
+
+Before serving production cloud-init data, apply the
+[metadata security requirements](docs/metadata-security.md). They describe the
+HAProxy trust boundary, privileged WireGuard bootstrap lifecycle, and checks
+operators must perform; installing the RPM alone does not establish those protections.
 
 ## Building Locally
 
