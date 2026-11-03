@@ -1,9 +1,14 @@
+# SPDX-FileCopyrightText: 2026 OpenCHAMI Contributors
+#
+# SPDX-License-Identifier: MIT
+
 name: Build and Test for Pull Requests
 
 on:
   pull_request:
     branches:
       - main
+      - release/0.1
   workflow_dispatch:
     inputs:
       release_tag:
@@ -42,7 +47,7 @@ jobs:
           else
             VERSION=0.0.0
           fi
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
           echo "Version is ${VERSION}"
 
       - name: Setup RPM build environment
@@ -63,5 +68,5 @@ jobs:
         run: |
           rpmbuild -ba ~/rpmbuild/SPECS/*.spec \
             --define "version ${{ env.VERSION }}" \
-            --define "release 1"
+            --define "rel 1"
             
