@@ -4,6 +4,11 @@ SPDX-FileCopyrightText: 2026 OpenCHAMI Contributors
 SPDX-License-Identifier: MIT
 -->
 
+# TEST PR DO NOT MERGE THIS PR
+
+This PR was created to allow us to verify that the CI / CD pipeline is
+working the way we want. It is not meant to actually be merged.
+
 # OpenCHAMI Quadlet Deployment (Release RPM)
 
 This repository provides an **RPM package** for deploying OpenCHAMI services as **Podman Quadlets**. It is **one of several valid deployment methods** and is the companion to the **[OpenCHAMI Tutorial](https://openchami.org/docs/tutorial/)**.
