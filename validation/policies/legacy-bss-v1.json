@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "policy_id": "legacy-bss-v1",
+  "endpoints": [
+    {"id": "bss-dumpstate", "target": "bss", "method": "GET", "path": "/boot/v1/dumpstate", "jwt": "public", "success_statuses": [200], "reason": "Existing public BSS read; response data is never retained by the validator."},
+    {"id": "bss-history", "target": "bss", "method": "GET", "path": "/boot/v1/endpoint-history", "jwt": "public", "success_statuses": [200], "reason": "Existing public BSS read."},
+    {"id": "bss-hosts", "target": "bss", "method": "GET", "path": "/boot/v1/hosts", "jwt": "public", "success_statuses": [200], "reason": "Existing public BSS read."},
+    {"id": "bss-bootparameters", "target": "bss", "method": "GET", "path": "/boot/v1/bootparameters", "jwt": "observe", "success_statuses": [200], "reason": "Existing optional JWKS configuration controls auth. Select required or public in a reviewed site policy to assert that site's setting."}
+  ]
+}

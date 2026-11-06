@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "policy_id": "phase1-release-v1",
+  "policy_id": "release-v1",
   "endpoints": [
     {
       "id": "smd-liveness",
@@ -44,7 +44,7 @@
       "success_statuses": [
         200
       ],
-      "reason": "Existing public collection GET in packaged SMD v2.20.5; phase 1 does not reclassify inventory reads."
+      "reason": "Existing public collection GET in packaged SMD v2.20.5."
     },
     {
       "id": "boot-health",
@@ -72,7 +72,7 @@
       "id": "boot-nodes",
       "target": "boot",
       "method": "GET",
-      "path": "/boot-service/nodes/",
+      "path": "/boot-service/nodes",
       "jwt": "observe",
       "success_statuses": [
         200

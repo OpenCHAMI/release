@@ -110,7 +110,7 @@ class EndpointValidationTest(unittest.TestCase):
                        object_pairs_hook=self.tool.unique_fields)
 
     def test_credential_is_sent_only_to_its_logical_target(self):
-        policy = json.loads((ROOT / "validation/policies/phase1-release-v1.json").read_text())
+        policy = json.loads((ROOT / "validation/policies/release-v1.json").read_text())
         calls = []
 
         def probe(url, token, *_):
@@ -134,6 +134,8 @@ class EndpointValidationTest(unittest.TestCase):
                 self.tool.validate_target(address)
 
     def test_packaged_policies_are_valid_and_documented(self):
+        self.assertEqual({source.name for source in (ROOT / "validation/policies").glob("*.json")},
+                         {"release-v1.json", "legacy-bss-v1.json"})
         for source in (ROOT / "validation/policies").glob("*.json"):
             with self.subTest(source=source.name):
                 policy = self.tool.validate_policy(json.loads(source.read_text()))
@@ -316,7 +318,8 @@ class PackageInstallTest(unittest.TestCase):
             subprocess.run([sys.executable, str(binary), "--help"], check=True,
                            stdout=subprocess.DEVNULL)
             installed = Path(directory) / "usr/share/openchami/validation/policies"
-            self.assertEqual(len(list(installed.glob("*.json"))), 2)
+            self.assertEqual({source.name for source in installed.glob("*.json")},
+                             {"release-v1.json", "legacy-bss-v1.json"})
             for source in installed.glob("*.json"):
                 self.assertEqual(stat.S_IMODE(source.stat().st_mode), 0o644)
                 self.assertIn("schema_version", json.loads(source.read_text()))
