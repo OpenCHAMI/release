@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "policy_id": "phase1-release-v1",
+  "endpoints": [
+    {
+      "id": "smd-liveness",
+      "target": "smd",
+      "method": "GET",
+      "path": "/hsm/v2/service/liveness",
+      "jwt": "public",
+      "success_statuses": [
+        204
+      ],
+      "reason": "Public liveness route in packaged SMD v2.20.5."
+    },
+    {
+      "id": "smd-ready",
+      "target": "smd",
+      "method": "GET",
+      "path": "/hsm/v2/service/ready",
+      "jwt": "public",
+      "success_statuses": [
+        200
+      ],
+      "reason": "Public readiness route in packaged SMD v2.20.5; unavailable readiness remains a failure."
+    },
+    {
+      "id": "smd-component-endpoints",
+      "target": "smd",
+      "method": "GET",
+      "path": "/hsm/v2/Inventory/ComponentEndpoints",
+      "jwt": "required",
+      "success_statuses": [
+        200
+      ],
+      "reason": "Protected collection GET in SMD v2.20.5 with the RPM's SMD_JWKS_URL configured. This does not change disputed public component-list policy."
+    },
+    {
+      "id": "smd-components",
+      "target": "smd",
+      "method": "GET",
+      "path": "/hsm/v2/State/Components",
+      "jwt": "public",
+      "success_statuses": [
+        200
+      ],
+      "reason": "Existing public collection GET in packaged SMD v2.20.5; phase 1 does not reclassify inventory reads."
+    },
+    {
+      "id": "boot-health",
+      "target": "boot",
+      "method": "GET",
+      "path": "/boot-service/health",
+      "jwt": "public",
+      "success_statuses": [
+        200
+      ],
+      "reason": "Public health endpoint in packaged boot-service v0.3.1."
+    },
+    {
+      "id": "metadata-health",
+      "target": "metadata",
+      "method": "GET",
+      "path": "/metadata-service/health",
+      "jwt": "public",
+      "success_statuses": [
+        200
+      ],
+      "reason": "Public health endpoint in packaged metadata-service v0.2.1."
+    },
+    {
+      "id": "boot-nodes",
+      "target": "boot",
+      "method": "GET",
+      "path": "/boot-service/nodes/",
+      "jwt": "observe",
+      "success_statuses": [
+        200
+      ],
+      "reason": "Record generated resource access for upgrade comparison; inbound auth policy and implementation require separate qualification."
+    },
+    {
+      "id": "metadata-groups",
+      "target": "metadata",
+      "method": "GET",
+      "path": "/metadata-service/groups/",
+      "jwt": "observe",
+      "success_statuses": [
+        200
+      ],
+      "reason": "Record generated CRUD read exposure without claiming enable_auth proves inbound JWT enforcement."
+    }
+  ]
+}

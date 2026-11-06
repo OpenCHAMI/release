@@ -17,6 +17,11 @@ Before serving production cloud-init data, apply the
 HAProxy trust boundary, privileged WireGuard bootstrap lifecycle, and checks
 operators must perform; installing the RPM alone does not establish those protections.
 
+The RPM also includes the read-only `openchami-validate-endpoints` command and
+versioned endpoint/JWT expectations. Use the [endpoint validation and upgrade guide](docs/endpoint-validation.md)
+to compare observed access before and after an update. Observation-only or untested
+rows remain incomplete; the tool does not activate authentication or alter services.
+
 ## Building Locally
 
 Requirements:

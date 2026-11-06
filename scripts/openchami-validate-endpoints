@@ -1,0 +1,281 @@
+#!/usr/bin/python3
+# SPDX-FileCopyrightText: 2026 OpenCHAMI Contributors
+# SPDX-License-Identifier: MIT
+
+"""Compare read-only endpoint probes to an explicitly selected versioned policy."""
+
+import argparse
+import datetime
+import http.client
+import hashlib
+import json
+import math
+import os
+from pathlib import Path
+import re
+import ssl
+import sys
+import urllib.error
+import urllib.parse
+import urllib.request
+
+
+IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,79}\Z")
+INVALID_JWT = (
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+    "eyJzdWIiOiJvcGVuY2hhbWktdmFsaWRhdG9yIiwiZXhwIjo0MTAyNDQ0ODAwfQ."
+    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+)
+
+
+def validate_policy(policy):
+    if not isinstance(policy, dict) or set(policy) != {
+        "schema_version", "policy_id", "endpoints"
+    }:
+        raise ValueError("policy requires schema_version, policy_id and endpoints")
+    if type(policy["schema_version"]) is not int or policy["schema_version"] != 1:
+        raise ValueError("unsupported policy schema_version")
+    if not isinstance(policy["policy_id"], str) or not IDENTIFIER.fullmatch(policy["policy_id"]):
+        raise ValueError("invalid policy_id")
+    entries = policy["endpoints"]
+    if not isinstance(entries, list) or not 1 <= len(entries) <= 500:
+        raise ValueError("policy requires between 1 and 500 endpoints")
+    seen = set()
+    fields = {"id", "target", "method", "path", "jwt", "reason", "success_statuses"}
+    for entry in entries:
+        if not isinstance(entry, dict) or set(entry) != fields:
+            raise ValueError("each endpoint must contain exactly the documented fields")
+        for field in ("id", "target"):
+            if not isinstance(entry[field], str) or not IDENTIFIER.fullmatch(entry[field]):
+                raise ValueError("invalid endpoint id or target")
+        if entry["id"] in seen:
+            raise ValueError("duplicate endpoint id")
+        seen.add(entry["id"])
+        path = entry["path"]
+        if (not isinstance(path, str) or not re.fullmatch(r"/[A-Za-z0-9_./~-]*", path)
+                or path.startswith("//") or ".." in path.split("/")):
+            raise ValueError("paths must be literal absolute paths without queries or traversal")
+        if entry["method"] != "GET":
+            raise ValueError("only GET probes are supported; mutations are never probed")
+        if entry["jwt"] not in ("public", "required", "observe", "absent"):
+            raise ValueError("unsupported jwt expectation")
+        if not isinstance(entry["reason"], str) or not entry["reason"].strip():
+            raise ValueError("endpoint requires a policy rationale")
+        statuses = entry["success_statuses"]
+        if (not isinstance(statuses, list) or not statuses
+                or any(type(s) is not int or not 200 <= s < 300 for s in statuses)):
+            raise ValueError("success_statuses must contain only successful HTTP status codes")
+    return policy
+
+
+def validate_target(address):
+    try:
+        parsed = urllib.parse.urlsplit(address)
+        port = parsed.port
+        if (parsed.scheme not in ("http", "https") or not parsed.hostname
+                or parsed.username is not None or parsed.password is not None
+                or parsed.query or parsed.fragment or "?" in address or "#" in address
+                or any(ord(c) <= 32 or ord(c) >= 127 for c in address)
+                or "\\" in address or (port is not None and port == 0)):
+            raise ValueError()
+    except (ValueError, TypeError):
+        raise ValueError("targets must be HTTP(S) URLs without credentials, queries or fragments") from None
+    return address.rstrip("/")
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def probe_url(url, bearer, timeout, cafile):
+    context = ssl.create_default_context(cafile=cafile)
+    # Never enable TLS key logging through an inherited SSLKEYLOGFILE setting.
+    if hasattr(context, "keylog_filename"):
+        context.keylog_filename = None
+    opener = urllib.request.build_opener(
+        urllib.request.ProxyHandler({}), NoRedirect(),
+        urllib.request.HTTPSHandler(context=context),
+    )
+    headers = {"Accept": "application/json", "User-Agent": "openchami-endpoint-validator/1"}
+    if bearer is not None:
+        headers["Authorization"] = "Bearer " + bearer
+    request = urllib.request.Request(url, headers=headers, method="GET")
+    try:
+        with opener.open(request, timeout=timeout) as response:
+            return {"status": response.status, "error": None}
+    except urllib.error.HTTPError as error:
+        status = error.code
+        error.close()
+        return {"status": status, "error": None}
+    except urllib.error.URLError as error:
+        kind = "tls-error" if isinstance(error.reason, ssl.SSLError) else "connection-error"
+        return {"status": None, "error": kind}
+    except ssl.SSLError:
+        return {"status": None, "error": "tls-error"}
+    except (OSError, http.client.HTTPException):
+        return {"status": None, "error": "connection-error"}
+
+
+def access_class(status):
+    if status is None:
+        return "no-http-response"
+    if 200 <= status < 300:
+        return "accessible"
+    if status == 401:
+        return "authentication-rejected"
+    if status == 403:
+        return "forbidden"
+    if status in (404, 410):
+        return "not-found"
+    if 300 <= status < 400:
+        return "redirect"
+    if status >= 500:
+        return "server-error"
+    return "other-http-response"
+
+
+def check_endpoint(entry, targets, tokens, denied_tokens, timeout, cafile, probe=probe_url):
+    required = entry["jwt"] == "required"
+    expected = {"anonymous": [401] if required else entry["success_statuses"]}
+    if entry["jwt"] == "observe":
+        expected = {"anonymous": "observe"}
+    if entry["jwt"] == "absent":
+        expected = {"anonymous": [404, 410]}
+    if entry["jwt"] != "absent":
+        expected["invalid"] = [401] if required else "observe"
+        expected["authorized"] = "observe" if entry["jwt"] == "observe" else entry["success_statuses"]
+    if required and entry["target"] in denied_tokens:
+        expected["unauthorized"] = [403]
+    row = {"id": entry["id"], "target": entry["target"], "method": "GET",
+           "path": entry["path"], "jwt": entry["jwt"], "expected": expected,
+           "probes": {}, "verdict": "incomplete", "reason": "target-not-configured"}
+    target = entry["target"]
+    if target not in targets:
+        return row
+    credentials = {"anonymous": None}
+    if entry["jwt"] != "absent":
+        credentials["invalid"] = INVALID_JWT
+        if target in tokens:
+            credentials["authorized"] = tokens[target]
+        if required and target in denied_tokens:
+            credentials["unauthorized"] = denied_tokens[target]
+    failed = False
+    for name, credential in credentials.items():
+        observed = probe(targets[target] + entry["path"], credential, timeout, cafile)
+        observed["access"] = access_class(observed["status"])
+        match = expected[name]
+        observed["matches"] = None if match == "observe" else observed["status"] in match
+        if observed["status"] is None or observed["matches"] is False:
+            failed = True
+        row["probes"][name] = observed
+    if failed:
+        row.update(verdict="fail", reason="unexpected-access-or-http-status")
+    elif entry["jwt"] == "observe":
+        row.update(reason="policy-undecided")
+    elif required and target not in tokens:
+        row.update(reason="authorized-credential-not-supplied")
+    else:
+        row.update(verdict="pass", reason="listed-expectations-met")
+    return row
+
+
+def assignments(values):
+    result = {}
+    for value in values:
+        name, separator, item = value.partition("=")
+        if not separator or not IDENTIFIER.fullmatch(name) or not item or name in result:
+            raise ValueError("expected unique TARGET=VALUE assignments")
+        result[name] = item
+    return result
+
+
+def credential_values(names):
+    result = {}
+    for target, name in names.items():
+        value = os.environ.get(name)
+        if not value or len(value) > 16384 or any(ord(c) <= 32 or ord(c) >= 127 for c in value):
+            raise ValueError("a credential environment variable is missing or invalid")
+        result[target] = value
+    return result
+
+
+def unique_fields(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate JSON field")
+        result[key] = value
+    return result
+
+
+def run(args):
+    source = args.policy.read_bytes()
+    policy = validate_policy(json.loads(source, object_pairs_hook=unique_fields))
+    targets = {name: validate_target(value) for name, value in assignments(args.target).items()}
+    if not targets:
+        raise ValueError("at least one --target is required")
+    known = {entry["target"] for entry in policy["endpoints"]}
+    tokens = credential_values(assignments(args.token_env))
+    denied = credential_values(assignments(args.denied_token_env))
+    if set(targets) - known or (set(tokens) | set(denied)) - set(targets):
+        raise ValueError("target and credential names must match policy targets")
+    if not math.isfinite(args.timeout) or not 0 < args.timeout <= 60:
+        raise ValueError("timeout must be greater than zero and at most 60 seconds")
+    if not args.allow_http_token:
+        for name in set(tokens) | set(denied):
+            if urllib.parse.urlsplit(targets[name]).scheme != "https":
+                raise ValueError("real tokens require HTTPS; trusted internal HTTP needs --allow-http-token")
+    if args.cacert:
+        ssl.create_default_context(cafile=args.cacert)
+    rows = [check_endpoint(entry, targets, tokens, denied, args.timeout, args.cacert)
+            for entry in policy["endpoints"]]
+    counts = {verdict: sum(row["verdict"] == verdict for row in rows)
+              for verdict in ("pass", "fail", "incomplete")}
+    exit_code = 1 if counts["fail"] else 2 if counts["incomplete"] else 0
+    report = {"report_schema_version": 1, "policy_id": policy["policy_id"],
+              "policy_sha256": hashlib.sha256(source).hexdigest(),
+              "observed_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              "summary": counts, "exit_code": exit_code, "endpoints": rows}
+    if args.json:
+        print(json.dumps(report, indent=2))
+    else:
+        print("Policy: " + policy["policy_id"])
+        for row in rows:
+            observations = ", ".join(
+                "{}={}:{}".format(name, probe["status"], probe["access"])
+                for name, probe in row["probes"].items()
+            ) or "not-probed"
+            print("{} {}/{} GET {} jwt={} expected={} observed={} ({})".format(
+                row["verdict"].upper(), row["target"], row["id"], row["path"],
+                row["jwt"], json.dumps(row["expected"], separators=(",", ":")),
+                observations, row["reason"],
+            ))
+        print("PASS={pass} FAIL={fail} INCOMPLETE={incomplete}".format(**counts))
+    return exit_code
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--policy", required=True, type=Path, help="versioned JSON endpoint policy")
+    parser.add_argument("--target", action="append", default=[], metavar="NAME=URL")
+    parser.add_argument("--token-env", action="append", default=[], metavar="NAME=ENV_VAR",
+                        help="authorized JWT environment variable for a target; never pass the token itself")
+    parser.add_argument("--denied-token-env", action="append", default=[], metavar="NAME=ENV_VAR",
+                        help="optional valid JWT lacking authority, expected to receive 403")
+    parser.add_argument("--cacert", help="trusted PEM CA bundle (certificate verification stays enabled)")
+    parser.add_argument("--timeout", type=float, default=5, help="per-probe socket timeout, maximum 60 seconds")
+    parser.add_argument("--allow-http-token", action="store_true",
+                        help="permit real credentials over explicitly selected trusted HTTP targets")
+    parser.add_argument("--json", action="store_true", help="emit machine-readable status report")
+    args = parser.parse_args()
+    try:
+        return run(args)
+    except (ValueError, OSError, ssl.SSLError):
+        # Do not copy exception text: it may contain a URL, credential or file data.
+        print("Invalid input or unreadable policy/CA file; check the documented schema and arguments.", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

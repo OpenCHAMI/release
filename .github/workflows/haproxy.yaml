@@ -10,6 +10,9 @@ on:
       - 'systemd/configs/haproxy.cfg'
       - 'tests/**'
       - 'Makefile'
+      - 'scripts/openchami-validate-endpoints'
+      - 'validation/**'
+      - 'openchami.spec'
       - '.github/workflows/haproxy.yaml'
   push:
     branches: [main]
@@ -17,6 +20,9 @@ on:
       - 'systemd/configs/haproxy.cfg'
       - 'tests/**'
       - 'Makefile'
+      - 'scripts/openchami-validate-endpoints'
+      - 'validation/**'
+      - 'openchami.spec'
       - '.github/workflows/haproxy.yaml'
 
 permissions:

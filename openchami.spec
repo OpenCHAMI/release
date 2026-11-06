@@ -12,6 +12,7 @@ BuildArch:      noarch
 Requires:       podman
 Requires:       jq
 Requires:       curl
+Requires:       python3
 Requires(post): coreutils
 Requires(post): openssl
 Requires(post): hostname
@@ -37,6 +38,8 @@ mkdir -p %{buildroot}/etc/openchami/configs \
          %{buildroot}/etc/profile.d \
          %{buildroot}/usr/libexec/openchami
 
+mkdir -p %{buildroot}/usr/share/openchami/validation/policies
+
 cp -r systemd/configs/*                     %{buildroot}/etc/openchami/configs/
 cp -r systemd/containers/*                  %{buildroot}/usr/share/containers/systemd/
 cp -r systemd/volumes/*                     %{buildroot}/usr/share/containers/systemd/
@@ -49,6 +52,8 @@ cp scripts/openchami_profile.sh             %{buildroot}/etc/profile.d/openchami
 cp scripts/multi-psql-db.sh                 %{buildroot}/etc/openchami/pg-init/multi-psql-db.sh
 cp scripts/ohpc-nodes.sh                    %{buildroot}/usr/libexec/openchami/
 cp scripts/tokensmith_bootstrap_token       %{buildroot}/usr/sbin/
+install -m 0755 scripts/openchami-validate-endpoints %{buildroot}/usr/bin/
+install -m 0644 validation/policies/* %{buildroot}/usr/share/openchami/validation/policies/
 
 chmod +x %{buildroot}/usr/libexec/openchami/bootstrap_openchami.sh
 chmod +x %{buildroot}/usr/libexec/openchami/ohpc-nodes.sh
@@ -61,7 +66,8 @@ chmod 600 %{buildroot}/etc/openchami/configs/openchami.env
 chmod 644 %{buildroot}/etc/openchami/configs/*
 
 %files
-%license LICENSE
+%license LICENSE LICENSES/MIT.txt
+%doc docs/endpoint-validation.md
 %config(noreplace) /etc/openchami/configs/*
 /usr/share/containers/systemd/*
 /usr/lib/systemd/system/openchami.target
@@ -74,6 +80,8 @@ chmod 644 %{buildroot}/etc/openchami/configs/*
 /etc/openchami/pg-init/multi-psql-db.sh
 /usr/bin/openchami-certificate-update
 /usr/sbin/tokensmith_bootstrap_token
+/usr/bin/openchami-validate-endpoints
+/usr/share/openchami/validation/policies/*
 
 %pre
 # Any pre-existing OpenCHAMI quadlets in /etc/containers/systemd could

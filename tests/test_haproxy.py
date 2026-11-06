@@ -25,9 +25,13 @@ IDENTITY_HEADERS = ("X-Forwarded-For", "Forwarded", "X-Real-IP", "True-Client-IP
 
 class EchoRequest(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
+        request_body = self.rfile.read(int(self.headers.get("Content-Length", "0")))
         body = json.dumps(
             {
                 "path": self.path,
+                "method": self.command,
+                "body": request_body.decode(),
+                "authorization": self.headers.get_all("Authorization", []),
                 "headers": {
                     name: self.headers.get_all(name, []) for name in IDENTITY_HEADERS
                 },
@@ -38,6 +42,11 @@ class EchoRequest(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    do_POST = do_GET
+    do_PUT = do_GET
+    do_PATCH = do_GET
+    do_DELETE = do_GET
 
     def log_message(self, *_args):
         pass
@@ -171,7 +180,7 @@ class HAProxyIdentityTest(unittest.TestCase):
                     raise RuntimeError(f"HAProxy failed to start: {log.read()}")
                 time.sleep(0.02)
 
-    def request(self, frontend, headers=(), path="/metadata-service/user-data"):
+    def request(self, frontend, headers=(), path="/metadata-service/user-data", method="GET", body=""):
         host, port, tls = frontend
         sock = socket.create_connection((host, port), timeout=3)
         try:
@@ -181,9 +190,11 @@ class HAProxyIdentityTest(unittest.TestCase):
                 context.check_hostname = False
                 context.verify_mode = ssl.CERT_NONE
                 sock = context.wrap_socket(sock, server_hostname="metadata.test")
-            lines = [f"GET {path} HTTP/1.1", "Host: metadata.test", "Connection: close"]
+            encoded_body = body.encode()
+            lines = [f"{method} {path} HTTP/1.1", "Host: metadata.test", "Connection: close",
+                     f"Content-Length: {len(encoded_body)}"]
             lines.extend(f"{name}: {value}" for name, value in headers)
-            sock.sendall(("\r\n".join(lines) + "\r\n\r\n").encode())
+            sock.sendall(("\r\n".join(lines) + "\r\n\r\n").encode() + encoded_body)
             response = http.client.HTTPResponse(sock)
             response.begin()
             body = response.read()
@@ -238,6 +249,24 @@ class HAProxyIdentityTest(unittest.TestCase):
                         frontend, (("X-Forwarded-For", "192.0.2.99"),), original
                     )
                     self.assertEqual(result["path"], rewritten)
+
+    def test_admin_methods_and_bootstrap_queries_are_preserved(self):
+        # Inert echo backend: these are contract checks, never live mutations.
+        for frontend in self.frontends:
+            for method in ("GET", "POST", "PUT", "PATCH", "DELETE"):
+                with self.subTest(frontend=frontend, method=method):
+                    payload = '{"fixture":"request-body"}' if method != "GET" else ""
+                    result = self.request(
+                        frontend, (("Authorization", "Bearer fixture-operator-token"),),
+                        "/metadata-service/groups/", method, payload,
+                    )
+                    self.assertEqual(result["method"], method)
+                    self.assertEqual(result["body"], payload)
+                    self.assertEqual(result["authorization"], ["Bearer fixture-operator-token"])
+                    self.assertEqual(result["path"], "/groups/")
+            query = "/boot-service/boot/v1/bootscript?mac=02%3A00%3A00%3A00%3A00%3A01&nid=1&name=x0c0s0b0n0"
+            result = self.request(frontend, path=query)
+            self.assertEqual(result["path"], query.removeprefix("/boot-service"))
 
 
 if __name__ == "__main__":
