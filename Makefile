@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-.PHONY: all clean test-haproxy
+.PHONY: all clean test-haproxy test-validator
 
 GIT     ?= $(shell command -v git 2>/dev/null)
 TAG     ?= $(shell $(GIT) describe --tags --always --abbrev=0)
@@ -16,6 +16,9 @@ all: openchami-$(VERSION)-$(RELEASE).noarch.rpm
 
 test-haproxy:
 	python3 -m unittest discover -s tests -p 'test_*.py' -v
+
+test-validator:
+	PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p 'test_endpoint_validation.py' -v
 
 $(HOME)/rpmbuild:
 	rpmdev-setuptree

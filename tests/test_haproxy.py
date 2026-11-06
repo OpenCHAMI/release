@@ -6,6 +6,8 @@
 
 import http.client
 import http.server
+import importlib.machinery
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -25,9 +27,26 @@ IDENTITY_HEADERS = ("X-Forwarded-For", "Forwarded", "X-Real-IP", "True-Client-IP
 
 class EchoRequest(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
+        # Model boot-service v0.3.1's RedirectSlashes before collection access.
+        # Authentication here is synthetic; the shipped policy only observes it.
+        if self.path in ("/nodes", "/nodes/"):
+            if self.path.endswith("/"):
+                status = 301
+            else:
+                status = 200 if self.headers.get("Authorization") == "Bearer fixture-node-reader" else 401
+            self.send_response(status)
+            if status == 301:
+                self.send_header("Location", "/nodes")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+        request_body = self.rfile.read(int(self.headers.get("Content-Length", "0")))
         body = json.dumps(
             {
                 "path": self.path,
+                "method": self.command,
+                "body": request_body.decode(),
+                "authorization": self.headers.get_all("Authorization", []),
                 "headers": {
                     name: self.headers.get_all(name, []) for name in IDENTITY_HEADERS
                 },
@@ -38,6 +57,11 @@ class EchoRequest(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    do_POST = do_GET
+    do_PUT = do_GET
+    do_PATCH = do_GET
+    do_DELETE = do_GET
 
     def log_message(self, *_args):
         pass
@@ -171,7 +195,7 @@ class HAProxyIdentityTest(unittest.TestCase):
                     raise RuntimeError(f"HAProxy failed to start: {log.read()}")
                 time.sleep(0.02)
 
-    def request(self, frontend, headers=(), path="/metadata-service/user-data"):
+    def request(self, frontend, headers=(), path="/metadata-service/user-data", method="GET", body=""):
         host, port, tls = frontend
         sock = socket.create_connection((host, port), timeout=3)
         try:
@@ -181,9 +205,11 @@ class HAProxyIdentityTest(unittest.TestCase):
                 context.check_hostname = False
                 context.verify_mode = ssl.CERT_NONE
                 sock = context.wrap_socket(sock, server_hostname="metadata.test")
-            lines = [f"GET {path} HTTP/1.1", "Host: metadata.test", "Connection: close"]
+            encoded_body = body.encode()
+            lines = [f"{method} {path} HTTP/1.1", "Host: metadata.test", "Connection: close",
+                     f"Content-Length: {len(encoded_body)}"]
             lines.extend(f"{name}: {value}" for name, value in headers)
-            sock.sendall(("\r\n".join(lines) + "\r\n\r\n").encode())
+            sock.sendall(("\r\n".join(lines) + "\r\n\r\n").encode() + encoded_body)
             response = http.client.HTTPResponse(sock)
             response.begin()
             body = response.read()
@@ -238,6 +264,47 @@ class HAProxyIdentityTest(unittest.TestCase):
                         frontend, (("X-Forwarded-For", "192.0.2.99"),), original
                     )
                     self.assertEqual(result["path"], rewritten)
+
+    def test_packaged_boot_collection_probe_reaches_handler_without_redirect(self):
+        root = Path(__file__).resolve().parents[1]
+        loader = importlib.machinery.SourceFileLoader(
+            "proxy_endpoint_validator", str(root / "scripts/openchami-validate-endpoints")
+        )
+        spec = importlib.util.spec_from_loader(loader.name, loader)
+        tool = importlib.util.module_from_spec(spec)
+        loader.exec_module(tool)
+        policy_file = root / "validation/policies/release-v1.json"
+        policy = json.loads(policy_file.read_text())
+        endpoint, = (entry for entry in policy["endpoints"] if entry["id"] == "boot-nodes")
+        host, port, _ = self.frontends[0]
+        target = f"http://{host}:{port}"
+        row = tool.check_endpoint(endpoint, {"boot": target},
+                                  {"boot": "fixture-node-reader"}, {}, 2, None)
+        self.assertEqual(row["verdict"], "incomplete")
+        self.assertEqual({name: probe["status"] for name, probe in row["probes"].items()},
+                         {"anonymous": 401, "invalid": 401, "authorized": 200})
+        # A trailing slash still records the redirect, rather than following it
+        # or forwarding a credential to its destination.
+        redirect = tool.probe_url(target + "/boot-service/nodes/", None, 2, None)
+        self.assertEqual(redirect, {"status": 301, "error": None})
+
+    def test_admin_methods_and_bootstrap_queries_are_preserved(self):
+        # Inert echo backend: these are contract checks, never live mutations.
+        for frontend in self.frontends:
+            for method in ("GET", "POST", "PUT", "PATCH", "DELETE"):
+                with self.subTest(frontend=frontend, method=method):
+                    payload = '{"fixture":"request-body"}' if method != "GET" else ""
+                    result = self.request(
+                        frontend, (("Authorization", "Bearer fixture-operator-token"),),
+                        "/metadata-service/groups/", method, payload,
+                    )
+                    self.assertEqual(result["method"], method)
+                    self.assertEqual(result["body"], payload)
+                    self.assertEqual(result["authorization"], ["Bearer fixture-operator-token"])
+                    self.assertEqual(result["path"], "/groups/")
+            query = "/boot-service/boot/v1/bootscript?mac=02%3A00%3A00%3A00%3A00%3A01&nid=1&name=x0c0s0b0n0"
+            result = self.request(frontend, path=query)
+            self.assertEqual(result["path"], query.removeprefix("/boot-service"))
 
 
 if __name__ == "__main__":

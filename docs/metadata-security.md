@@ -84,6 +84,11 @@ the previous header trust behavior is not a safe rollback.
 
 ## Verification
 
+Use the packaged [endpoint validator and upgrade checklist](endpoint-validation.md)
+to record expected versus observed anonymous/JWT access from each relevant network
+location before and after updates. Its selected GET probes complement the tests below;
+they do not prove bootstrap isolation or sanitize headers on behalf of a service.
+
 With HAProxy, OpenSSL, Python 3, and make installed, run `make test-haproxy`.
 The test uses the packaged configuration with temporary loopback listeners,
 an ephemeral TLS certificate, and an inert backend. It checks HTTP and HTTPS,
