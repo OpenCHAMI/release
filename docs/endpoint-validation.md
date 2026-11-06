@@ -162,9 +162,10 @@ Example for a future or site-approved JWT requirement, **not current release pol
 
 The matching target could be `metadata=https://head.example:8443/metadata-service`.
 Choosing a stricter validation expectation does not implement it on the service.
-Keep `observe` rows visible until the team explicitly settles them. Test mutations
-with service regression tests and disposable integration fixtures; schema v1 rejects
-them rather than attempting invalid-body or fake-ID requests on a live deployment.
+Keep `observe` rows visible until the site policy specifies the expected access
+behavior. Test mutations with service regression tests and disposable integration
+fixtures; schema v1 rejects them rather than attempting invalid-body or fake-ID
+requests on a live deployment.
 
 ## Upgrade checklist
 

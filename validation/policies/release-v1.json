@@ -33,7 +33,7 @@
       "success_statuses": [
         200
       ],
-      "reason": "Protected collection GET in SMD v2.20.5 with the RPM's SMD_JWKS_URL configured. This does not change disputed public component-list policy."
+      "reason": "Protected collection GET in SMD v2.20.5 with the RPM's SMD_JWKS_URL configured."
     },
     {
       "id": "smd-components",
