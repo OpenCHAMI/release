@@ -58,7 +58,8 @@ chmod 600 %{buildroot}/etc/openchami/configs/openchami.env
 chmod 644 %{buildroot}/etc/openchami/configs/*
 
 %files
-%license LICENSE
+%license LICENSE LICENSES/MIT.txt
+%doc docs/service-updates.md
 %config(noreplace) /etc/openchami/configs/*
 /etc/containers/systemd/*
 /etc/systemd/system/openchami.target

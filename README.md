@@ -17,6 +17,9 @@ Before serving production cloud-init data, apply the
 HAProxy trust boundary, privileged WireGuard bootstrap lifecycle, and checks
 operators must perform; installing the RPM alone does not establish those protections.
 
+Review the [service update and upgrade notes](docs/service-updates.md) before
+updating an existing deployment.
+
 ## Building Locally
 
 Requirements:
