@@ -22,6 +22,9 @@ versioned endpoint/JWT expectations. Use the [endpoint validation and upgrade gu
 to compare observed access before and after an update. Observation-only or untested
 rows remain incomplete; the tool does not activate authentication or alter services.
 
+Review the [service update and upgrade notes](docs/service-updates.md) before
+updating an existing deployment.
+
 ## Building Locally
 
 Requirements:

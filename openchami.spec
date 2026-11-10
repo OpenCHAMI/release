@@ -67,7 +67,7 @@ chmod 644 %{buildroot}/etc/openchami/configs/*
 
 %files
 %license LICENSE LICENSES/MIT.txt
-%doc docs/endpoint-validation.md
+%doc docs/endpoint-validation.md docs/service-updates.md
 %config(noreplace) /etc/openchami/configs/*
 /usr/share/containers/systemd/*
 /usr/lib/systemd/system/openchami.target
