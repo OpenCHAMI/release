@@ -13,7 +13,7 @@ packages or new service dependencies are required.
 ## Choose a policy and vantage point
 
 `release-v1.json` describes a selected read-only set for the packaged topology:
-SMD v2.20.5, boot-service v0.3.1 and metadata-service v0.2.1 behind HAProxy. It checks
+SMD v2.20.5, boot-service v0.3.3 and metadata-service v0.2.2 behind HAProxy. It checks
 public health and existing public SMD component-list access, plus SMD's already
 protected ComponentEndpoints collection with the shipped JWKS configuration.
 Generated boot/metadata collection reads are **observations**, not an assertion that
@@ -22,12 +22,12 @@ reviewed policy qualified against the deployed service configuration.
 
 The route classifications come from the pinned service sources:
 [SMD v2.20.5](https://github.com/OpenCHAMI/smd/blob/v2.20.5/cmd/smd/routers.go),
-[boot-service v0.3.1](https://github.com/OpenCHAMI/boot-service/blob/v0.3.1/cmd/server/main.go)
-and [metadata-service v0.2.1](https://github.com/OpenCHAMI/metadata-service/blob/v0.2.1/cmd/server/main.go).
+[boot-service v0.3.3](https://github.com/OpenCHAMI/boot-service/blob/v0.3.3/cmd/server/main.go)
+and [metadata-service v0.2.2](https://github.com/OpenCHAMI/metadata-service/blob/v0.2.2/cmd/server/main.go).
 Requalify these expectations when service versions or configuration change.
 
 The boot collection probe uses `/boot-service/nodes` without a trailing slash.
-HAProxy strips the service prefix and boot-service v0.3.1 redirects `/nodes/` to
+HAProxy strips the service prefix and boot-service v0.3.3 redirects `/nodes/` to
 `/nodes` before the collection handler. Using the canonical path records collection
 access rather than a redirect. The validator continues to report redirects without
 following them or forwarding credentials.
